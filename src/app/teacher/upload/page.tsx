@@ -16,9 +16,9 @@ export default function UploadPage() {
 
 function Upload({ name }: { name: string }) {
   const router = useRouter();
-  const [terms, setTerms] = useState<ParsedTerm[]>([]);
-  const [pick, setPick] = useState<boolean[]>([]);
-  const [tab, setTab] = useState(0);
+  const [sheets, setSheets] = useState<ParsedTerm[]>([]);
+  const [term, setTerm] = useState<ParsedTerm | null>(null);
+  const [fileName, setFileName] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [active, setActive] = useState<{ semester: number; academic_year: number } | null>(null);
@@ -29,31 +29,34 @@ function Upload({ name }: { name: string }) {
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file) return;
+    e.target.value = "";
+    if (!file || !active) return;
     setErr("");
+    setTerm(null);
     try {
       const { parseWorkbook } = await import("@/lib/excel");
-      const all = parseWorkbook(await file.arrayBuffer()).filter((t) => t.students.length);
-      if (!all.length) return setErr("ไม่พบชีต เทอม1 / เทอม2 หรือไม่มีรายชื่อนักเรียน");
-      // Only the semester the admin opened for upload
-      const parsed = all
-        .filter((t) => !active || t.set.semester === active.semester)
-        .map((t) => (active ? { ...t, set: { ...t.set, academic_year: active.academic_year } } : t));
-      if (!parsed.length) return setErr(`ไฟล์นี้ไม่มีข้อมูลภาคเรียนที่ ${active?.semester}`);
-      setTerms(parsed);
-      setPick(parsed.map(() => true));
-      setTab(0);
+      const found = parseWorkbook(await file.arrayBuffer()).filter((t) => t.students.length);
+      if (!found.length) return setErr("ไม่พบชีตที่มีหัวตาราง 'เลขประจำตัว' และรายชื่อนักเรียน");
+      setFileName(file.name);
+      setSheets(found);
     } catch {
       setErr("อ่านไฟล์ไม่สำเร็จ กรุณาใช้ไฟล์ .xlsx ตามแบบฟอร์ม");
     }
   }
 
+  /** The chosen sheet is always saved as the semester the admin opened for upload. */
+  function choose(t: ParsedTerm) {
+    setTerm({ ...t, set: { ...t.set, semester: active!.semester, academic_year: active!.academic_year } });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   async function save() {
+    if (!term) return;
     setBusy(true);
     setErr("");
     try {
-      for (let i = 0; i < terms.length; i++) if (pick[i]) await saveSet(terms[i].set, terms[i].students);
-      logTeacher(`upload ${terms.filter((_, i) => pick[i]).map((t) => `${t.set.level}/${t.set.room} ภาค ${t.set.semester}`).join(", ")}`, name);
+      await saveSet(term.set, term.students);
+      logTeacher(`upload ${term.set.level}/${term.set.room} ภาค ${term.set.semester} (ชีต ${term.sheet})`, name);
       router.push("/teacher");
     } catch (e) {
       setErr("บันทึกไม่สำเร็จ: " + (e as Error).message);
@@ -61,46 +64,68 @@ function Upload({ name }: { name: string }) {
     }
   }
 
-  const t = terms[tab];
-  const patch = (p: Partial<ParsedTerm>) => setTerms(terms.map((x, i) => (i === tab ? { ...x, ...p } : x)));
-
   return (
     <main className="pb-24">
       <TopBar title="อัปโหลดผลการเรียน" back="/teacher" />
       <div className="space-y-4 p-4">
         <label className="card flex cursor-pointer flex-col items-center gap-2 border-dashed p-6 text-center">
           <span className="grid size-14 place-items-center rounded-[18px] text-2xl text-white shadow-md" style={{ background: "var(--icon-a)" }}>⬆</span>
-          <span className="font-medium">{terms.length ? "เลือกไฟล์ใหม่" : "เลือกไฟล์ Excel (.xlsx)"}</span>
+          <span className="font-medium">{fileName || "เลือกไฟล์ Excel (.xlsx)"}</span>
           <span className="text-xs text-muted">
-            {active ? `ระบบจะนำเข้าเฉพาะ ภาคเรียนที่ ${active.semester}/${active.academic_year} (ชีต เทอม${active.semester})` : "กำลังโหลดการตั้งค่า…"}
+            {active ? `จะบันทึกเป็น ภาคเรียนที่ ${active.semester}/${active.academic_year}` : "กำลังโหลดการตั้งค่า…"}
           </span>
           <input type="file" accept=".xlsx,.xls" className="hidden" onChange={onFile} disabled={!active} />
         </label>
         {err && <p className="text-sm text-bad">{err}</p>}
 
-        {t && (
-          <>
-            <div className="card grid gap-1 p-1" style={{ gridTemplateColumns: `repeat(${terms.length}, 1fr)` }}>
-              {terms.map((x, i) => (
-                <button key={i} onClick={() => setTab(i)} className={`rounded-xl py-2 text-sm font-medium ${i === tab ? "bg-primary text-primary-fg" : "text-muted"}`}>
-                  ภาคเรียนที่ {x.set.semester} ({x.students.length})
+        {sheets.length > 0 && !term && (
+          <section className="space-y-3">
+            <div>
+              <h2 className="font-semibold">เลือกชีตที่มีผลการเรียน ภาคเรียนที่ {active?.semester}</h2>
+              <p className="text-sm text-muted">ระบบพบ {sheets.length} ชีต ตรวจดูรายชื่อและรายวิชาก่อนเลือก</p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {sheets.map((t) => (
+                <button key={t.sheet} onClick={() => choose(t)} className="card space-y-2 p-4 text-left transition active:scale-[.99]">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="rounded-lg bg-primary px-2.5 py-1 text-sm font-semibold text-primary-fg">ชีต “{t.sheet}”</span>
+                    <span className="text-sm text-muted">{t.students.length} คน · {t.set.subjects.length} วิชา</span>
+                  </div>
+                  {t.title && <p className="line-clamp-2 text-xs text-muted">{t.title}</p>}
+                  <div className="text-sm">
+                    <span className="text-muted">วิชา: </span>
+                    {t.set.subjects.slice(0, 3).map((s) => s.name).join(", ")}{t.set.subjects.length > 3 ? " …" : ""}
+                  </div>
+                  <div className="text-sm">
+                    <span className="text-muted">นักเรียน: </span>
+                    {t.students.slice(0, 3).map((s) => s.full_name).join(", ")}{t.students.length > 3 ? " …" : ""}
+                  </div>
+                  {t.warnings.map((w) => <p key={w} className="text-xs text-warn">⚠ {w}</p>)}
+                  <div className="pt-1 text-right text-sm font-semibold text-primary">ใช้ชีตนี้ ›</div>
                 </button>
               ))}
             </div>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" className="size-5" checked={pick[tab]} onChange={(e) => setPick(pick.map((v, i) => (i === tab ? e.target.checked : v)))} />
-              บันทึกภาคเรียนนี้
-            </label>
-            {t.warnings.map((w) => <p key={w} className="rounded-xl bg-surface-2 p-3 text-sm text-warn">⚠ {w} — ช่องสีเหลืองคือช่องที่ไม่มีเกรด</p>)}
-            <SetMetaForm set={t.set} onChange={(set) => patch({ set })} lockTerm />
-            <StudentTable subjects={t.set.subjects} rows={t.students} onChange={(students) => patch({ students })} />
+          </section>
+        )}
+
+        {term && (
+          <>
+            <div className="card flex items-center gap-3 p-3 text-sm">
+              <div className="min-w-0 flex-1">
+                อ่านจากชีต <b>“{term.sheet}”</b> → บันทึกเป็น <b>ภาคเรียนที่ {term.set.semester}/{term.set.academic_year}</b>
+              </div>
+              <button className="btn btn-ghost min-h-9 shrink-0 px-3 text-sm" onClick={() => setTerm(null)}>เปลี่ยนชีต</button>
+            </div>
+            {term.warnings.map((w) => <p key={w} className="rounded-xl bg-surface-2 p-3 text-sm text-warn">⚠ {w} — ช่องสีเหลืองคือช่องที่ไม่มีเกรด</p>)}
+            <SetMetaForm set={term.set} onChange={(set) => setTerm({ ...term, set })} lockTerm />
+            <StudentTable subjects={term.set.subjects} rows={term.students} onChange={(students) => setTerm({ ...term, students })} />
           </>
         )}
       </div>
-      {t && (
+      {term && (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 mx-auto flex max-w-md md:max-w-3xl lg:max-w-5xl justify-end p-4 [&>*]:pointer-events-auto">
-          <button className="btn btn-primary w-full shadow-lg md:w-auto md:px-8" onClick={save} disabled={busy || !pick.some(Boolean)}>
-            {busy ? "กำลังบันทึก…" : `💾 บันทึก (${terms.filter((_, i) => pick[i]).reduce((a, x) => a + x.students.length, 0)} รายการ)`}
+          <button className="btn btn-primary w-full shadow-lg md:w-auto md:px-8" onClick={save} disabled={busy}>
+            {busy ? "กำลังบันทึก…" : `💾 บันทึก (${term.students.length} คน)`}
           </button>
         </div>
       )}

@@ -48,7 +48,8 @@ function tidyNames(s: string) {
     .join(", ");
 }
 
-export type ParsedTerm = { set: ReportSet; students: StudentRow[]; warnings: string[] };
+/** One sheet that looks like a grade sheet. `title` is the sheet heading, shown so the teacher can pick the right one. */
+export type ParsedTerm = { sheet: string; title: string; set: ReportSet; students: StudentRow[]; warnings: string[] };
 
 export function parseWorkbook(buf: ArrayBuffer): ParsedTerm[] {
   const wb = XLSX.read(buf, { type: "array" });
@@ -78,9 +79,8 @@ export function parseWorkbook(buf: ArrayBuffer): ParsedTerm[] {
   const year = Number(findRight(main, "ปีการศึกษา")) || 0;
 
   const out: ParsedTerm[] = [];
+  // Any sheet with a "เลขประจำตัว" header row is a candidate, whatever it is named.
   for (const name of wb.SheetNames) {
-    const m = name.match(/^เทอม\s*(\d)$/);
-    if (!m) continue;
     const g = grid(wb.Sheets[name]);
     const warnings: string[] = [];
     const headerIdx = g.findIndex((r) => r.some((c) => clean(c) === "เลขประจำตัว"));
@@ -109,7 +109,7 @@ export function parseWorkbook(buf: ArrayBuffer): ParsedTerm[] {
     });
 
     // title e.g. "... ห้อง 2 ภาคเรียนที่ 1  ปีการศึกษา 2569"
-    const title = g.slice(0, headerIdx).flat().map(clean).join(" ");
+    const title = g.slice(0, headerIdx).flat().map(clean).filter((x) => x && !/^\d+$/.test(x)).join(" ");
     const tRoom = title.match(/ห้อง\s*(\S+)/)?.[1];
     const tYear = Number(title.match(/ปีการศึกษา\s*(\d{4})/)?.[1]) || 0;
 
@@ -139,12 +139,15 @@ export function parseWorkbook(buf: ArrayBuffer): ParsedTerm[] {
     const missing = students.filter((s) => s.scores.some((x) => x.grade == null)).length;
     if (missing) warnings.push(`${missing} คนมีบางวิชาไม่มีเกรด (เช่น ร / มส)`);
 
+    const guess = Number(title.match(/ภาคเรียนที่\s*(\d)/)?.[1] ?? name.match(/(\d)\s*$/)?.[1]) || 1;
     out.push({
+      sheet: name,
+      title,
       set: {
         school_name: school,
         level,
         room: room || tRoom || "",
-        semester: Number(m[1]),
+        semester: guess,
         academic_year: year || tYear,
         homeroom_teacher: homeroom,
         director,
