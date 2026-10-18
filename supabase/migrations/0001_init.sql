@@ -148,3 +148,6 @@ grant execute on function public.is_admin(), public.is_active_teacher() to authe
 insert into storage.buckets (id, name, public) values ('assets','assets', true) on conflict do nothing;
 create policy assets_admin_write on storage.objects for insert to authenticated with check (bucket_id = 'assets' and public.is_admin());
 create policy assets_admin_update on storage.objects for update to authenticated using (bucket_id = 'assets' and public.is_admin());
+
+-- trigger functions are not callable via API
+revoke execute on function public.guard_profile(), public.handle_new_user() from authenticated, anon, public;
