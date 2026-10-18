@@ -12,13 +12,6 @@ export default async function Home() {
 
   return (
     <main className="relative flex min-h-dvh flex-col">
-      <div className="mesh fixed inset-0 -z-10" aria-hidden />
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
-        <div className="float-a absolute -left-24 -top-24 size-80 rounded-full opacity-60 blur-3xl" style={{ background: "var(--mesh-1)" }} />
-        <div className="float-b absolute -right-28 top-1/3 size-96 rounded-full opacity-50 blur-3xl" style={{ background: "var(--mesh-2)" }} />
-        <div className="float-a absolute -bottom-32 left-1/4 size-96 rounded-full opacity-50 blur-3xl" style={{ background: "var(--mesh-3)" }} />
-      </div>
-
       <section className="flex flex-col items-center px-6 pb-8 pt-16 text-center md:pt-24">
         <div className="glass pop grid size-24 place-items-center rounded-[28px]">
           {s.logo_url ? (

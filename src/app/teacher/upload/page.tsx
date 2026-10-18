@@ -69,7 +69,7 @@ function Upload({ name }: { name: string }) {
       <TopBar title="อัปโหลดผลการเรียน" back="/teacher" />
       <div className="space-y-4 p-4">
         <label className="card flex cursor-pointer flex-col items-center gap-2 border-dashed p-6 text-center">
-          <span className="text-3xl">📄</span>
+          <span className="grid size-14 place-items-center rounded-[18px] text-2xl text-white shadow-md" style={{ background: "var(--icon-a)" }}>⬆</span>
           <span className="font-medium">{terms.length ? "เลือกไฟล์ใหม่" : "เลือกไฟล์ Excel (.xlsx)"}</span>
           <span className="text-xs text-muted">
             {active ? `ระบบจะนำเข้าเฉพาะ ภาคเรียนที่ ${active.semester}/${active.academic_year} (ชีต เทอม${active.semester})` : "กำลังโหลดการตั้งค่า…"}

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 const reduced = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /** Counts from 0 to `value` with ease-out; calls onDone at the end. */
-export function CountUp({ value, decimals = 0, duration = 1600, delay = 0, onDone }: {
+export function CountUp({ value, decimals = 0, duration = 2600, delay = 0, onDone }: {
   value: number; decimals?: number; duration?: number; delay?: number; onDone?: () => void;
 }) {
   const [v, setV] = useState(0);
@@ -14,7 +14,7 @@ export function CountUp({ value, decimals = 0, duration = 1600, delay = 0, onDon
     const start = performance.now() + delay;
     const tick = (now: number) => {
       const t = Math.min(1, Math.max(0, (now - start) / duration));
-      setV(value * (1 - Math.pow(1 - t, 4)));
+      setV(value * (1 - Math.pow(1 - t, 5))); // ease-out quint: fast start, long gentle settle
       if (t < 1) raf = requestAnimationFrame(tick);
       else onDone?.();
     };

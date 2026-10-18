@@ -9,6 +9,7 @@ import { thaiDateTime } from "@/lib/format";
 import { logTeacher, type Profile } from "@/lib/useAuth";
 import type { Settings, Theme } from "@/lib/types";
 import { shrinkImage } from "@/lib/image";
+import { CapIcon, UserIcon } from "@/components/Icons";
 
 const TABS = ["ผลการเรียน", "ตั้งค่า", "ครู", "ประวัติ"] as const;
 
@@ -21,7 +22,7 @@ function Admin({ p }: { p: Profile }) {
   return (
     <main className="pb-10">
       <TopBar title="ผู้ดูแลระบบ" right={<Link href="/teacher" className="btn btn-ghost min-h-9 px-3 text-sm">หน้าครู</Link>} />
-      <div className="sticky top-[57px] z-10 flex gap-1 overflow-x-auto bg-[var(--surface)] p-2">
+      <div className="glass sticky top-[61px] z-10 mx-3 mt-3 flex gap-1 overflow-x-auto rounded-2xl p-1.5 md:top-[76px]">
         {TABS.map((t) => (
           <button key={t} onClick={() => setTab(t)} className={`shrink-0 rounded-xl px-3 py-2 text-sm font-medium ${t === tab ? "bg-primary text-primary-fg" : "text-muted"}`}>{t}</button>
         ))}
@@ -110,7 +111,7 @@ function SettingsTab({ name }: { name: string }) {
           {s.logo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={s.logo_url} alt="" className="size-16 rounded-xl bg-white object-contain" />
-          ) : <div className="grid size-16 place-items-center rounded-xl bg-surface-2 text-2xl">🎓</div>}
+          ) : <div className="grid size-16 place-items-center rounded-xl bg-surface-2 text-primary"><CapIcon size={32} /></div>}
           <label className="btn btn-ghost cursor-pointer">เปลี่ยนโลโก้<input type="file" accept="image/*" className="hidden" onChange={uploadLogo} /></label>
         </div>
         {msg.includes("โลโก้") && <p className="text-sm text-muted">{msg}</p>}
@@ -193,7 +194,7 @@ function TeachersTab({ me }: { me: string }) {
       <p className="text-sm text-muted md:col-span-2">ครูทั้งหมด {list.length} คน · รออนุมัติ {list.filter((t) => !t.active).length} คน</p>
       {list.map((t) => (
         <div key={t.id} className="card flex items-center gap-3 p-3">
-          <div className="grid size-10 place-items-center rounded-full bg-surface-2">{t.role === "admin" ? "⭐" : "👩‍🏫"}</div>
+          <div className="grid size-10 shrink-0 place-items-center rounded-[14px] text-white" style={{ background: t.role === "admin" ? "var(--icon-b)" : "var(--icon-a)" }}><UserIcon size={20} /></div>
           <div className="min-w-0 flex-1">
             <div className="truncate font-medium">{t.full_name || "-"}</div>
             <div className="truncate text-xs text-muted">{t.email} · {t.role === "admin" ? "แอดมิน" : "ครู"}</div>

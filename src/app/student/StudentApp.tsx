@@ -6,6 +6,7 @@ import { windowState } from "@/lib/format";
 import { Countdown } from "@/components/Countdown";
 import { Logo } from "@/components/Brand";
 import ResultView from "./ResultView";
+import { UserIcon } from "@/components/Icons";
 
 type Step = "input" | "confirm" | "opening" | "result";
 const IDLE_MS = 3 * 60 * 1000;
@@ -62,16 +63,16 @@ export default function StudentApp({ settings: s }: { settings: Settings }) {
 
   return (
     <main className="min-h-dvh pb-10">
-      <header className="hero flex items-center gap-3 px-5 pb-6 pt-8 md:mt-4 md:rounded-[var(--radius)]">
+      <header className="glass sticky top-0 z-20 flex items-center gap-3 px-5 py-3 md:top-3 md:mt-3 md:rounded-2xl">
         <Logo s={s} size={44} />
         <div className="min-w-0 flex-1">
           <div className="truncate font-semibold">{s.system_name}</div>
-          <div className="truncate text-sm opacity-80">{s.school_name}</div>
+          <div className="truncate text-sm text-muted">{s.school_name}</div>
         </div>
         {step === "result" ? (
-          <button onClick={reset} className="rounded-full bg-white/15 px-3 py-1.5 text-sm">ออกจากระบบ</button>
+          <button onClick={reset} className="btn btn-ghost min-h-9 px-3 text-sm">ออกจากระบบ</button>
         ) : (
-          <Link href="/" className="rounded-full bg-white/15 px-3 py-1.5 text-sm">หน้าแรก</Link>
+          <Link href="/" className="btn btn-ghost min-h-9 px-3 text-sm">หน้าแรก</Link>
         )}
       </header>
 
@@ -107,7 +108,7 @@ export default function StudentApp({ settings: s }: { settings: Settings }) {
         ) : step === "confirm" && first ? (
           <div className="card space-y-4 p-6 text-center">
             <p className="text-sm text-muted">กรุณายืนยันว่าเป็นข้อมูลของคุณ</p>
-            <div className="mx-auto grid size-16 place-items-center rounded-full bg-surface-2 text-3xl">🧑‍🎓</div>
+            <div className="pop mx-auto grid size-16 place-items-center rounded-[20px] text-white shadow-md" style={{ background: "var(--icon-a)" }}><UserIcon size={32} /></div>
             <div>
               <div className="text-xl font-semibold">{first.full_name}</div>
               <div className="text-muted">{first.level} / {first.room} · เลขที่ {first.no ?? "-"}</div>
@@ -157,7 +158,7 @@ function IdleGuard({ onLogout }: { onLogout: () => void }) {
   if (warn == null) return null;
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-6">
-      <div className="card w-full max-w-sm space-y-3 bg-surface p-6 text-center" style={{ background: "var(--surface)" }}>
+      <div className="card w-full max-w-sm space-y-3 p-6 text-center">
         <div className="text-3xl">⏳</div>
         <h3 className="text-lg font-semibold">ออกจากระบบอัตโนมัติ</h3>
         <p className="text-muted">ไม่มีการใช้งาน ระบบจะออกจากระบบใน <b className="tabular-nums">{warn}</b> วินาที</p>

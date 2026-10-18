@@ -13,6 +13,6 @@ export function windowState(open_at: string | null, close_at: string | null, now
 export function gradeColor(g: unknown) {
   if (typeof g !== "number") return "var(--warn)";
   if (g >= 3) return "var(--ok)";
-  if (g >= 1) return "var(--accent)";
+  if (g >= 1) return "#2563eb"; // fixed blue so mid grades never read as "fail" in the red theme
   return "var(--bad)";
 }

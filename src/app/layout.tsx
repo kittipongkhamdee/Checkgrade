@@ -20,6 +20,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="th" data-theme={s.theme} className={thai.variable} style={{ colorScheme: "only light" }}>
       <body className="antialiased">
+        <div className="mesh fixed inset-0 -z-10" aria-hidden />
+        <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
+          <div className="float-a absolute -left-24 -top-24 size-80 rounded-full opacity-60 blur-3xl" style={{ background: "var(--mesh-1)" }} />
+          <div className="float-b absolute -right-28 top-1/3 size-96 rounded-full opacity-50 blur-3xl" style={{ background: "var(--mesh-2)" }} />
+          <div className="float-a absolute -bottom-32 left-1/4 size-96 rounded-full opacity-50 blur-3xl" style={{ background: "var(--mesh-3)" }} />
+        </div>
         <div className="mx-auto min-h-dvh w-full max-w-md md:max-w-3xl lg:max-w-5xl">{children}</div>
       </body>
     </html>
