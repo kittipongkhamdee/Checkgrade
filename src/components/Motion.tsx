@@ -59,33 +59,72 @@ export const schoolConfetti = () => {
   confetti([p, p, a, "#ffffff", "#ffffff", m]);
 };
 
-/** One-shot confetti burst on a full-screen canvas. */
+/**
+ * Full-screen confetti: two side cannons fire up and inward, then a shower
+ * falls across the whole width. Particle count and speed scale with the
+ * viewport so narrow phones look as full as desktops.
+ */
 export function confetti(colors = ["#0a84ff", "#5e5ce6", "#ff375f", "#ff9f0a", "#34c759", "#ffd60a"]) {
   if (reduced()) return;
+  const W = innerWidth, H = innerHeight;
+  const dpr = Math.min(devicePixelRatio || 1, 2); // cap for phone performance
   const c = document.createElement("canvas");
-  c.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:60";
-  c.width = innerWidth * devicePixelRatio;
-  c.height = innerHeight * devicePixelRatio;
+  c.style.cssText = "position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:60";
+  c.width = W * dpr;
+  c.height = H * dpr;
   document.body.appendChild(c);
-  const ctx = c.getContext("2d")!;
-  ctx.scale(devicePixelRatio, devicePixelRatio);
-  const parts = Array.from({ length: 140 }, () => ({
-    x: innerWidth / 2 + (Math.random() - 0.5) * 80, y: innerHeight * 0.35,
-    vx: (Math.random() - 0.5) * 14, vy: -Math.random() * 14 - 4,
-    r: Math.random() * 6 + 4, a: Math.random() * Math.PI, va: (Math.random() - 0.5) * 0.3,
-    color: colors[(Math.random() * colors.length) | 0],
-  }));
-  const t0 = performance.now();
-  const frame = (now: number) => {
-    ctx.clearRect(0, 0, innerWidth, innerHeight);
+  const ctx2 = c.getContext("2d")!;
+  ctx2.scale(dpr, dpr);
+
+  type P = { x: number; y: number; vx: number; vy: number; w: number; h: number; a: number; va: number; tilt: number; color: string; round: boolean; delay: number };
+  const pick = () => colors[(Math.random() * colors.length) | 0];
+  const speed = Math.max(H, 600) / 50; // taller screens → stronger launch
+  const parts: P[] = [];
+  const make = (x: number, y: number, vx: number, vy: number, delay: number): P => ({
+    x, y, vx, vy, delay,
+    w: Math.random() * 7 + 6, h: Math.random() * 5 + 4,
+    a: Math.random() * Math.PI, va: (Math.random() - 0.5) * 0.35, tilt: Math.random() * Math.PI,
+    color: pick(), round: Math.random() < 0.25,
+  });
+
+  const perCannon = Math.round(Math.min(180, 60 + (W * H) / 6000));
+  for (let i = 0; i < perCannon; i++) {
+    const ang = (-65 - Math.random() * 25) * (Math.PI / 180); // up and inward
+    const v = speed * (0.75 + Math.random() * 0.6);
+    parts.push(make(0, H, Math.cos(ang) * v, Math.sin(ang) * v, Math.random() * 6));
+    parts.push(make(W, H, -Math.cos(ang) * v, Math.sin(ang) * v, Math.random() * 6));
+  }
+  const shower = Math.round(Math.min(160, W / 3));
+  for (let i = 0; i < shower; i++) {
+    parts.push(make(Math.random() * W, -20 - Math.random() * H * 0.4, (Math.random() - 0.5) * 2, Math.random() * 2 + 1, 25 + Math.random() * 40));
+  }
+
+  let frame = 0;
+  const tick = () => {
+    frame++;
+    ctx2.clearRect(0, 0, W, H);
+    let alive = 0;
     for (const p of parts) {
-      p.vy += 0.35; p.vx *= 0.99; p.x += p.vx; p.y += p.vy; p.a += p.va;
-      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a);
-      ctx.fillStyle = p.color; ctx.fillRect(-p.r / 2, -p.r / 4, p.r, p.r / 2); ctx.restore();
+      if (frame < p.delay) { alive++; continue; }
+      p.vy += 0.28; p.vx *= 0.985; p.vy *= 0.985;
+      p.vy = Math.min(p.vy, 5.5); // flutter down instead of dropping
+      p.x += p.vx + Math.sin(p.tilt) * 0.6; p.y += p.vy;
+      p.a += p.va; p.tilt += 0.08;
+      if (p.y > H + 30) continue;
+      alive++;
+      ctx2.save();
+      ctx2.translate(p.x, p.y);
+      ctx2.rotate(p.a);
+      ctx2.scale(1, Math.cos(p.tilt)); // paper flip
+      ctx2.fillStyle = p.color;
+      if (p.color.includes("255, 255, 255") || p.color === "#ffffff") { ctx2.strokeStyle = "rgba(0,0,0,.12)"; ctx2.lineWidth = 0.6; }
+      if (p.round) { ctx2.beginPath(); ctx2.arc(0, 0, p.h / 1.6, 0, Math.PI * 2); ctx2.fill(); }
+      else { ctx2.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); if (p.color === "#ffffff") ctx2.strokeRect(-p.w / 2, -p.h / 2, p.w, p.h); }
+      ctx2.restore();
     }
-    if (now - t0 < 2600) requestAnimationFrame(frame); else c.remove();
+    if (alive && frame < 420) requestAnimationFrame(tick); else c.remove();
   };
-  requestAnimationFrame(frame);
+  requestAnimationFrame(tick);
 }
 
 // ---- Sound: synthesized with Web Audio (no audio files to download) ----
