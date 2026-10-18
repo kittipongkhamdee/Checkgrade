@@ -60,7 +60,7 @@ export default function StudentApp({ settings: s }: { settings: Settings }) {
 
   return (
     <main className="min-h-dvh pb-10">
-      <header className="hero flex items-center gap-3 px-5 pb-6 pt-8">
+      <header className="hero flex items-center gap-3 px-5 pb-6 pt-8 md:mt-4 md:rounded-[var(--radius)]">
         <Logo s={s} size={44} />
         <div className="min-w-0 flex-1">
           <div className="truncate font-semibold">{s.system_name}</div>
@@ -73,7 +73,7 @@ export default function StudentApp({ settings: s }: { settings: Settings }) {
         )}
       </header>
 
-      <div className="px-5 pt-5">
+      <div className={`px-5 pt-5 ${step === "result" ? "" : "mx-auto max-w-md md:pt-12"}`}>
         {state === "before" && s.open_at ? (
           <div className="space-y-4 text-center">
             <h2 className="text-lg font-semibold">ระบบจะเปิดให้ตรวจสอบในอีก</h2>

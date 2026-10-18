@@ -54,7 +54,7 @@ function Dashboard({ p }: { p: Profile }) {
         }
       />
       <div className="space-y-4 p-4">
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid gap-4 md:grid-cols-2 md:items-start"><div className="grid grid-cols-3 gap-3 md:self-stretch md:[&>*]:grid md:[&>*]:content-center">
           <Kpi label="นักเรียน" v={stats.students} />
           <Kpi label="GPA เฉลี่ย" v={stats.avg ? stats.avg.toFixed(2) : "-"} />
           <Kpi label="0 / ร / มส" v={stats.incomplete} tone="var(--bad)" />
@@ -77,12 +77,14 @@ function Dashboard({ p }: { p: Profile }) {
             </div>
           )}
         </div>
+        </div>
 
         <div className="flex items-center justify-between">
           <h2 className="font-semibold">ชุดข้อมูลของฉัน</h2>
         </div>
+        <div className="grid gap-3 md:grid-cols-2">
         {sets == null ? <div className="skeleton h-20" /> : sets.length === 0 ? (
-          <div className="card p-6 text-center text-muted">ยังไม่มีข้อมูล เริ่มจากอัปโหลดไฟล์ Excel</div>
+          <div className="card p-6 text-center text-muted md:col-span-2">ยังไม่มีข้อมูล เริ่มจากอัปโหลดไฟล์ Excel</div>
         ) : (
           sets.map((s) => {
             const g = s.student_results.map((r) => Number(r.gpa)).filter((x) => x > 0);
@@ -101,9 +103,10 @@ function Dashboard({ p }: { p: Profile }) {
             );
           })
         )}
+        </div>
       </div>
-      <div className="fixed inset-x-0 bottom-0 mx-auto max-w-md p-4">
-        <Link href="/teacher/upload" className="btn btn-primary w-full shadow-lg">⬆ อัปโหลดไฟล์ Excel</Link>
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 mx-auto flex max-w-md md:max-w-3xl lg:max-w-5xl justify-end p-4 [&>*]:pointer-events-auto">
+        <Link href="/teacher/upload" className="btn btn-primary w-full shadow-lg md:w-auto md:px-8">⬆ อัปโหลดไฟล์ Excel</Link>
       </div>
     </main>
   );

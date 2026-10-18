@@ -61,8 +61,8 @@ function Editor({ name, me, isAdmin }: { name: string; me: string; isAdmin: bool
         <StudentTable subjects={set.subjects} rows={rows} onChange={setRows} />
         {msg && <p className="text-center text-sm">{msg}</p>}
       </div>
-      <div className="fixed inset-x-0 bottom-0 mx-auto max-w-md p-4">
-        <button className="btn btn-primary w-full shadow-lg" onClick={save} disabled={busy}>{busy ? "กำลังบันทึก…" : "💾 บันทึกการแก้ไข"}</button>
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 mx-auto flex max-w-md md:max-w-3xl lg:max-w-5xl justify-end p-4 [&>*]:pointer-events-auto">
+        <button className="btn btn-primary w-full shadow-lg md:w-auto md:px-8" onClick={save} disabled={busy}>{busy ? "กำลังบันทึก…" : "💾 บันทึกการแก้ไข"}</button>
       </div>
     </main>
   );

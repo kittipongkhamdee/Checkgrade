@@ -19,7 +19,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="th" data-theme={s.theme} className={thai.variable}>
       <body className="antialiased">
-        <div className="mx-auto min-h-dvh w-full max-w-md">{children}</div>
+        <div className="mx-auto min-h-dvh w-full max-w-md md:max-w-3xl lg:max-w-5xl">{children}</div>
       </body>
     </html>
   );

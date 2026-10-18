@@ -101,7 +101,7 @@ function SettingsTab({ name }: { name: string }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
       <ShareLink />
       <section className="card space-y-3 p-4">
         <h2 className="font-semibold">ข้อมูลระบบ</h2>
@@ -170,8 +170,8 @@ function SettingsTab({ name }: { name: string }) {
         </div>
       </section>
 
-      {msg && <p className="text-center text-sm">{msg}</p>}
-      <button className="btn btn-primary w-full" onClick={save} disabled={busy}>{busy ? "กำลังบันทึก…" : "💾 บันทึกการตั้งค่า"}</button>
+      {msg && <p className="text-center text-sm lg:col-span-2">{msg}</p>}
+      <button className="btn btn-primary w-full lg:col-span-2" onClick={save} disabled={busy}>{busy ? "กำลังบันทึก…" : "💾 บันทึกการตั้งค่า"}</button>
     </div>
   );
 }
@@ -188,8 +188,8 @@ function TeachersTab({ me }: { me: string }) {
 
   if (!list) return <div className="skeleton h-40" />;
   return (
-    <div className="space-y-2">
-      <p className="text-sm text-muted">ครูทั้งหมด {list.length} คน · รออนุมัติ {list.filter((t) => !t.active).length} คน</p>
+    <div className="grid gap-2 md:grid-cols-2">
+      <p className="text-sm text-muted md:col-span-2">ครูทั้งหมด {list.length} คน · รออนุมัติ {list.filter((t) => !t.active).length} คน</p>
       {list.map((t) => (
         <div key={t.id} className="card flex items-center gap-3 p-3">
           <div className="grid size-10 place-items-center rounded-full bg-surface-2">{t.role === "admin" ? "⭐" : "👩‍🏫"}</div>
@@ -333,8 +333,8 @@ function ResultsTab() {
       </div>
       {keys.length === 0 && <div className="card p-6 text-center text-muted">ยังไม่มีครูอัปโหลดข้อมูล</div>}
       {keys.map((k) => (
-        <section key={k} className="space-y-2">
-          <h3 className="px-1 font-semibold">{k}</h3>
+        <section key={k} className="grid gap-2 md:grid-cols-2">
+          <h3 className="px-1 font-semibold md:col-span-2">{k}</h3>
           {groups.get(k)!.sort((a, b) => b.academic_year - a.academic_year || a.semester - b.semester).map((x) => {
             const g = x.student_results.map((r) => Number(r.gpa)).filter((v) => v > 0);
             return (

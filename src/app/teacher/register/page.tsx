@@ -28,7 +28,7 @@ export default function Register() {
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value });
 
   return (
-    <main className="px-5 pt-12">
+    <main className="mx-auto max-w-md px-5 pt-12 md:pt-20">
       <Link href="/teacher" className="text-sm text-muted">‹ เข้าสู่ระบบ</Link>
       <form onSubmit={submit} className="card mt-4 space-y-4 p-6">
         <h1 className="text-xl font-semibold">ลงทะเบียนครู</h1>

@@ -31,13 +31,13 @@ export function StudentTable({ subjects, rows, onChange }: { subjects: Subject[]
   };
 
   return (
-    <div className="space-y-2">
-      <p className="text-xs text-muted">แตะที่ชื่อนักเรียนเพื่อดู/แก้ไขคะแนนทุกวิชา · {subjects.length} วิชา</p>
+    <div className="grid gap-2 md:grid-cols-2 md:items-start">
+      <p className="text-xs text-muted md:col-span-2">แตะที่ชื่อนักเรียนเพื่อดู/แก้ไขคะแนนทุกวิชา · {subjects.length} วิชา</p>
       {rows.map((r, i) => {
         const missing = r.scores.filter((s) => s.grade == null).length;
         const isOpen = open === i;
         return (
-          <div key={i} className="card overflow-hidden">
+          <div key={i} className={`card overflow-hidden ${isOpen ? "md:col-span-2" : ""}`}>
             <button className="flex w-full items-center gap-3 p-3 text-left" onClick={() => setOpen(isOpen ? null : i)}>
               <div className="grid size-9 shrink-0 place-items-center rounded-full bg-surface-2 text-sm font-semibold">{r.no ?? "-"}</div>
               <div className="min-w-0 flex-1">
@@ -62,8 +62,8 @@ export function StudentTable({ subjects, rows, onChange }: { subjects: Subject[]
                   <Field label="ชื่อ-สกุล" value={r.full_name} onChange={(v) => update(i, { full_name: v })} />
                 </div>
 
-                <div className="divide-y divide-[var(--border)] rounded-xl border border-line">
-                  <div className="flex px-3 py-2 text-xs text-muted">
+                <div className="divide-y divide-[var(--border)] rounded-xl border border-line md:grid md:grid-cols-2 md:divide-y-0 md:[&>*]:border-b md:[&>*]:border-line">
+                  <div className="flex px-3 py-2 text-xs text-muted md:col-span-2">
                     <span className="flex-1">รายวิชา</span><span className="w-16 text-center">คะแนน</span><span className="w-14 text-center">เกรด</span>
                   </div>
                   {subjects.map((s) => {
@@ -82,7 +82,7 @@ export function StudentTable({ subjects, rows, onChange }: { subjects: Subject[]
                   })}
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
                   {EXTRA.map(([k, l, isNum]) => (
                     <Field key={k} label={l} value={show(r[k])} mode={isNum ? "decimal" : undefined}
                       onChange={(v) => update(i, { [k]: isNum ? numOrNull(v) : v || null } as Partial<StudentRow>)} />
@@ -100,7 +100,7 @@ export function StudentTable({ subjects, rows, onChange }: { subjects: Subject[]
           </div>
         );
       })}
-      <button className="btn btn-ghost w-full" onClick={addRow}>+ เพิ่มนักเรียน</button>
+      <button className="btn btn-ghost w-full md:col-span-2" onClick={addRow}>+ เพิ่มนักเรียน</button>
     </div>
   );
 }

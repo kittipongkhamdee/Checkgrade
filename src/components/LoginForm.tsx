@@ -21,7 +21,7 @@ export function LoginForm({ title = "เข้าสู่ระบบครู"
   }
 
   return (
-    <main className="px-5 pt-12">
+    <main className="mx-auto max-w-md px-5 pt-12 md:pt-20">
       <Link href="/" className="text-sm text-muted">‹ หน้าแรก</Link>
       <form onSubmit={submit} className="card mt-4 space-y-4 p-6">
         <h1 className="text-xl font-semibold">{title}</h1>

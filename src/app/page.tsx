@@ -8,7 +8,7 @@ export default async function Home() {
   const state = windowState(s.open_at, s.close_at);
   return (
     <main className="flex min-h-dvh flex-col">
-      <section className="hero rounded-b-[32px] px-6 pb-12 pt-14 text-center">
+      <section className="hero rounded-b-[32px] px-6 pb-12 pt-14 text-center md:rounded-[32px] md:mt-6 md:py-16">
         <div className="mx-auto mb-5 w-fit"><Logo s={s} size={88} /></div>
         <h1 className="text-2xl font-bold leading-tight">{s.system_name}</h1>
         <p className="mt-1 opacity-85">{s.school_name}</p>
@@ -17,7 +17,7 @@ export default async function Home() {
         </p>
       </section>
 
-      <section className="-mt-6 flex flex-1 flex-col gap-4 px-5">
+      <section className="-mt-6 grid flex-1 content-start gap-4 px-5 md:grid-cols-2">
         <Link href="/student" className="card flex items-center gap-4 p-5 active:scale-[.99]">
           <div className="grid size-14 place-items-center rounded-2xl bg-primary text-2xl text-primary-fg">🧑‍🎓</div>
           <div className="flex-1">
@@ -35,7 +35,7 @@ export default async function Home() {
           <span className="text-muted">›</span>
         </Link>
 
-        <div className="card p-4 text-sm">
+        <div className="card p-4 text-sm md:col-span-2">
           <div className="mb-1 font-semibold">ช่วงเวลาตรวจสอบผล</div>
           <div className="text-muted">เปิด: {thaiDateTime(s.open_at)}</div>
           <div className="text-muted">ปิด: {thaiDateTime(s.close_at)}</div>

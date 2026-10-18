@@ -54,7 +54,8 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
         </div>
       )}
 
-      <div ref={fullRef} className="space-y-4">
+      <div ref={fullRef} className="space-y-4 lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-start lg:gap-4 lg:space-y-0">
+      <div className="space-y-4">
       {/* Shareable card */}
       <div ref={cardRef} className="hero overflow-hidden rounded-[var(--radius)] p-6">
         <div className="text-sm opacity-80">{s.school_name}</div>
@@ -86,6 +87,8 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
         </button>
       </div>
 
+      </div>
+      <div className="space-y-4">
       <div className="card divide-y divide-[var(--border)]">
         <div className="flex px-4 py-3 text-xs text-muted">
           <span className="flex-1">รายวิชา</span><span className="w-12 text-center">คะแนน</span><span className="w-12 text-center">เกรด</span>
@@ -118,7 +121,8 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
           </div>
         )}
       </div>
-      <div className="pt-1 text-center text-xs text-muted">{s.system_name} · {s.school_name}</div>
+      </div>
+      <div className="pt-1 text-center text-xs text-muted lg:col-span-2">{s.system_name} · {s.school_name}</div>
       </div>
 
       {shot && <SaveSheet shot={shot} onClose={() => { URL.revokeObjectURL(shot.url); setShot(null); }} />}
