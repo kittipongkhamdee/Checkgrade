@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import type { Settings, StudentTerm } from "@/lib/types";
 import { gradeColor } from "@/lib/format";
+import { CountUp, Reveal, confetti } from "@/components/Motion";
 
 const fmt = (v: unknown) => (v == null || v === "" ? "-" : String(v));
 
@@ -22,13 +23,17 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
     const node = kind === "card" ? cardRef.current : fullRef.current;
     if (!node) return;
     setBusy(kind);
+    fullRef.current?.classList.add("capturing");
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     try {
       const { toBlob } = await import("html-to-image");
       const bg = getComputedStyle(document.body).backgroundColor;
       const blob = await toBlob(node, {
         pixelRatio: 2.5,
         backgroundColor: bg && bg !== "rgba(0, 0, 0, 0)" ? bg : "#ffffff",
-        style: kind === "full" ? { padding: "16px" } : undefined,
+        width: node.offsetWidth + 32,
+        height: node.offsetHeight + 32,
+        style: { margin: "0", padding: "16px", boxSizing: "content-box" },
         filter: (n) => !(n instanceof HTMLElement && n.dataset.noCapture != null),
       });
       if (!blob) throw new Error("capture failed");
@@ -37,6 +42,7 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
     } catch {
       alert("สร้างรูปไม่สำเร็จ กรุณาลองใหม่");
     } finally {
+      fullRef.current?.classList.remove("capturing");
       setBusy("");
     }
   }
@@ -57,23 +63,23 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
       <div ref={fullRef} className="space-y-4 lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-start lg:gap-4 lg:space-y-0">
       <div className="space-y-4">
       {/* Shareable card */}
-      <div ref={cardRef} className="hero overflow-hidden rounded-[var(--radius)] p-6">
+      <div ref={cardRef} key={t.semester} className="hero unveil shine overflow-hidden rounded-[var(--radius)] p-6">
         <div className="text-sm opacity-80">{s.school_name}</div>
         <div className="mt-1 text-xl font-bold">{t.full_name}</div>
         <div className="text-sm opacity-80">{t.level}/{t.room} · ภาคเรียนที่ {t.semester}/{t.academic_year}</div>
         <div className="mt-5 flex items-end justify-between">
           <div>
             <div className="text-xs uppercase tracking-wider opacity-70">เกรดเฉลี่ย (GPA)</div>
-            <div className="text-6xl font-bold tabular-nums leading-none">{t.gpa != null ? Number(t.gpa).toFixed(2) : "-"}</div>
+            <div className="text-6xl font-bold tabular-nums leading-none">{t.gpa != null ? <CountUp value={Number(t.gpa)} decimals={2} delay={500} onDone={() => Number(t.gpa) >= 2.5 && confetti()} /> : "-"}</div>
           </div>
           <div className="text-right text-sm">
-            <div>ลำดับที่ <b className="text-lg">{fmt(t.rank)}</b></div>
+            <div>ลำดับที่ <b className="text-lg">{t.rank != null ? <CountUp value={Number(t.rank)} delay={500} /> : "-"}</b></div>
             <div className="opacity-80">{t.subjects.length} วิชา · {credits} หน่วยกิต</div>
           </div>
         </div>
         <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
-          <Stat label="คะแนนรวม" v={fmt(t.total)} />
-          <Stat label="ร้อยละ" v={t.percent != null ? Number(t.percent).toFixed(2) : "-"} />
+          <Stat label="คะแนนรวม" v={t.total != null ? <CountUp value={Number(t.total)} delay={700} /> : "-"} />
+          <Stat label="ร้อยละ" v={t.percent != null ? <CountUp value={Number(t.percent)} decimals={2} delay={700} /> : "-"} />
           <Stat label="คุณลักษณะ" v={fmt(t.traits)} />
         </div>
       </div>
@@ -84,10 +90,11 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
         <div className="flex px-4 py-3 text-xs text-muted">
           <span className="flex-1">รายวิชา</span><span className="w-12 text-center">คะแนน</span><span className="w-12 text-center">เกรด</span>
         </div>
-        {t.subjects.map((sub) => {
+        {t.subjects.map((sub, i) => {
           const g = gradeOf(sub.code);
           return (
-            <div key={sub.code + sub.name} className="flex items-center px-4 py-3">
+            <Reveal key={t.semester + sub.code + sub.name} delay={(i % 4) * 70}>
+            <div className="flex items-center px-4 py-3">
               <div className="min-w-0 flex-1">
                 <div className="truncate font-medium">{sub.name}</div>
                 <div className="text-xs text-muted">{sub.code} · {sub.type || "-"} · {sub.credit} นก.</div>
@@ -95,11 +102,12 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
               <div className="w-12 text-center tabular-nums">{fmt(g?.score)}</div>
               <div className="w-12 text-center text-lg font-bold tabular-nums" style={{ color: gradeColor(g?.grade) }}>{fmt(g?.grade)}</div>
             </div>
+            </Reveal>
           );
         })}
       </div>
 
-      <div className="card space-y-2 p-4 text-sm">
+      <Reveal><div className="card space-y-2 p-4 text-sm">
         <Row k="ชุมนุม" v={t.club} />
         <Row k="คุณลักษณะอันพึงประสงค์" v={t.traits} />
         <Row k="อ่าน คิดวิเคราะห์ และเขียน" v={t.thinking} />
@@ -111,7 +119,7 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
             <div>{t.comment}</div>
           </div>
         )}
-      </div>
+      </div></Reveal>
       </div>
       <div className="pt-1 text-center text-xs text-muted lg:col-span-2">{s.system_name} · {s.school_name}</div>
       </div>
@@ -166,7 +174,7 @@ function SaveSheet({ shot, onClose }: { shot: { url: string; file: File }; onClo
   );
 }
 
-function Stat({ label, v }: { label: string; v: string }) {
+function Stat({ label, v }: { label: string; v: React.ReactNode }) {
   return (
     <div className="rounded-xl bg-white/15 px-2 py-2">
       <div className="opacity-75">{label}</div>

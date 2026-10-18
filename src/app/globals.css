@@ -149,6 +149,25 @@ body {
   }
   .input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); }
   .label { display: block; font-size: .85rem; color: var(--muted); margin-bottom: .35rem; }
+  .reveal { opacity: 0; transform: translateY(18px) scale(.98); transition: opacity .6s ease, transform .6s cubic-bezier(.2,.8,.2,1); }
+  .reveal-in, .capturing .reveal { opacity: 1; transform: none; }
+  .capturing .reveal, .capturing .unveil, .capturing .shine::after { transition: none !important; animation: none !important; }
+  .capturing .shine::after { display: none; }
+  .capturing * { animation: none !important; }
+  .pop { animation: pop .5s cubic-bezier(.2,1.6,.4,1) both; }
+  @keyframes pop { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: none; } }
+  .unveil { animation: unveil .9s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes unveil { from { opacity: 0; transform: translateY(30px) scale(.92) rotateX(12deg); filter: blur(8px); } to { opacity: 1; transform: none; filter: none; } }
+  .shine { position: relative; overflow: hidden; }
+  .shine::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / .35) 50%, transparent 65%); transform: translateX(-100%); animation: shine 1.4s 1.6s ease-out forwards; }
+  @keyframes shine { to { transform: translateX(100%); } }
+  .float-a { animation: floatA 18s ease-in-out infinite alternate; }
+  .float-b { animation: floatB 22s ease-in-out infinite alternate; }
+  @keyframes floatA { to { transform: translate(8%, 6%) scale(1.15); } }
+  @keyframes floatB { to { transform: translate(-10%, -8%) scale(1.1); } }
+  .rise { animation: rise .7s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .reveal, .pop, .unveil, .rise, .float-a, .float-b, .shine::after { animation: none !important; transition: none !important; opacity: 1; transform: none; } }
   .skeleton { background: var(--surface-2); border-radius: 8px; animation: pulse 1.4s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity: .5; } }
 }

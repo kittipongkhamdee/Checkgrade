@@ -7,7 +7,7 @@ import { Countdown } from "@/components/Countdown";
 import { Logo } from "@/components/Brand";
 import ResultView from "./ResultView";
 
-type Step = "input" | "confirm" | "result";
+type Step = "input" | "confirm" | "opening" | "result";
 const IDLE_MS = 3 * 60 * 1000;
 const WARN_S = 30;
 
@@ -52,7 +52,9 @@ export default function StudentApp({ settings: s }: { settings: Settings }) {
   }
 
   function confirm() {
-    setStep("result");
+    // short drum-roll before revealing results
+    setStep("opening");
+    setTimeout(() => setStep((st) => (st === "opening" ? "result" : st)), 1400);
     fetch("/api/log", { method: "POST", body: JSON.stringify({ code: code.trim(), name: terms[0]?.full_name ?? "" }), keepalive: true }).catch(() => {});
   }
 
@@ -115,6 +117,15 @@ export default function StudentApp({ settings: s }: { settings: Settings }) {
               <button onClick={reset} className="btn btn-ghost">ไม่ใช่</button>
               <button onClick={confirm} className="btn btn-primary">ตกลง</button>
             </div>
+          </div>
+        ) : step === "opening" ? (
+          <div className="flex flex-col items-center gap-4 py-16 text-center">
+            <div className="relative grid size-24 place-items-center">
+              <span className="absolute inset-0 animate-ping rounded-full bg-primary opacity-20" />
+              <span className="pop grid size-20 place-items-center rounded-full bg-primary text-4xl text-primary-fg">📜</span>
+            </div>
+            <div className="rise text-lg font-semibold">กำลังเปิดผลการเรียน…</div>
+            <div className="rise text-sm text-muted" style={{ animationDelay: "200ms" }}>ลุ้นกันเลย!</div>
           </div>
         ) : step === "result" ? (
           <ResultView terms={terms} settings={s} />
