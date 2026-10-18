@@ -30,6 +30,8 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
     return () => { clearInterval(id); document.body.style.overflow = ""; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spot]);
+  // GPA, total, percent and rank all count up together
+  const timing = spot === "on" ? { delay: 1400, duration: 3600 } : { delay: 500, duration: 2600 };
   function finishCount() {
     if (spot === "on") {
       setSpot("fading");
@@ -101,16 +103,16 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
         <div className="mt-5 flex items-end justify-between">
           <div>
             <div className="text-xs uppercase tracking-wider opacity-70">เกรดเฉลี่ย (GPA)</div>
-            <div ref={gpaRef} className="inline-block text-6xl font-bold tabular-nums leading-none">{t.gpa != null ? <CountUp value={Number(t.gpa)} decimals={2} delay={spot === "on" ? 1400 : 500} duration={spot === "on" ? 3600 : 2600} onDone={finishCount} /> : "-"}</div>
+            <div ref={gpaRef} className="inline-block text-6xl font-bold tabular-nums leading-none">{t.gpa != null ? <CountUp value={Number(t.gpa)} decimals={2} {...timing} onDone={finishCount} /> : "-"}</div>
           </div>
           <div className="text-right text-sm">
-            <div>ลำดับที่ <b className="text-lg">{t.rank != null ? <CountUp value={Number(t.rank)} delay={500} /> : "-"}</b></div>
+            <div>ลำดับที่ <b className="text-lg">{t.rank != null ? <CountUp value={Number(t.rank)} {...timing} /> : "-"}</b></div>
             <div className="opacity-80">{t.subjects.length} วิชา · {credits} หน่วยกิต</div>
           </div>
         </div>
         <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
-          <Stat label="คะแนนรวม" v={t.total != null ? <CountUp value={Number(t.total)} delay={700} /> : "-"} />
-          <Stat label="ร้อยละ" v={t.percent != null ? <CountUp value={Number(t.percent)} decimals={2} delay={700} /> : "-"} />
+          <Stat label="คะแนนรวม" v={t.total != null ? <CountUp value={Number(t.total)} {...timing} /> : "-"} />
+          <Stat label="ร้อยละ" v={t.percent != null ? <CountUp value={Number(t.percent)} decimals={2} {...timing} /> : "-"} />
           <Stat label="คุณลักษณะ" v={fmt(t.traits)} />
         </div>
       </div>

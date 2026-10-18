@@ -104,7 +104,7 @@ export function unlockAudio() {
   } catch { /* no audio support */ }
 }
 
-/** Party-popper "pop" followed by ~3s of crowd applause that swells and fades. */
+/** ~3s of crowd applause that swells and fades. */
 export function applause() {
   if (!ctx || isMuted() || reduced()) return;
   const a = ctx;
@@ -117,19 +117,10 @@ export function applause() {
   master.gain.value = 0.9;
   master.connect(a.destination);
 
-  // pop
-  const pop = a.createBufferSource();
-  pop.buffer = noise;
-  const popF = a.createBiquadFilter();
-  popF.type = "lowpass"; popF.frequency.value = 1800;
-  const popG = a.createGain(); popG.gain.value = 1.4;
-  pop.connect(popF).connect(popG).connect(master);
-  pop.start(now);
-
   // applause: many short filtered noise bursts (= individual claps)
   const dur = 3.2;
   for (let i = 0; i < 260; i++) {
-    const t = now + 0.08 + Math.random() * dur;
+    const t = now + Math.random() * dur;
     const env = Math.sin(Math.PI * Math.min(1, (t - now) / dur)) ** 0.6; // swell then fade
     const src = a.createBufferSource();
     src.buffer = noise;
