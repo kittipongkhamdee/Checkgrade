@@ -12,7 +12,8 @@ export const DEFAULT_SETTINGS: Settings = {
   rooms: [],
   open_at: null,
   close_at: null,
-  theme: "academic",
+  theme: "red",
+  primary_color: null,
 };
 
 export async function getSettings(): Promise<Settings> {

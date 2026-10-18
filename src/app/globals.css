@@ -78,10 +78,10 @@
   --bad: #9f1239;
   --radius: 16px;
   --shadow: 0 1px 2px rgb(127 29 29 / 0.06), 0 4px 16px rgb(127 29 29 / 0.06);
-  --hero: linear-gradient(135deg, #991b1b, #e11d48);
+  --hero: linear-gradient(135deg, #991b1b, #dc2626);
   --card-blur: none;
-  --mesh-1: #fecaca; --mesh-2: #fde2e4; --mesh-3: #fed7aa;
-  --icon-a: linear-gradient(135deg, #dc2626, #9f1239); --icon-b: linear-gradient(135deg, #f97316, #e11d48);
+  --mesh-1: #fecaca; --mesh-2: #ffffff; --mesh-3: #fde2e4;
+  --icon-a: linear-gradient(135deg, #ef4444, #991b1b); --icon-b: linear-gradient(135deg, #f87171, #b91c1c);
 }
 
 @theme inline {

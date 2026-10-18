@@ -44,6 +44,21 @@ export function Reveal({ children, delay = 0, className = "" }: { children: Reac
   );
 }
 
+/** Resolve theme CSS variables to concrete colors (works with color-mix values). */
+export function themeColors(vars = ["--primary", "--accent", "--mesh-1"]) {
+  const el = document.createElement("span");
+  document.body.appendChild(el);
+  const out = vars.map((v) => { el.style.color = `var(${v})`; return getComputedStyle(el).color; });
+  el.remove();
+  return out;
+}
+
+/** Confetti in the school colors plus white. */
+export const schoolConfetti = () => {
+  const [p, a, m] = themeColors();
+  confetti([p, p, a, "#ffffff", "#ffffff", m]);
+};
+
 /** One-shot confetti burst on a full-screen canvas. */
 export function confetti(colors = ["#0a84ff", "#5e5ce6", "#ff375f", "#ff9f0a", "#34c759", "#ffd60a"]) {
   if (reduced()) return;

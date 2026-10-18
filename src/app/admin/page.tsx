@@ -9,6 +9,7 @@ import { thaiDateTime } from "@/lib/format";
 import { logTeacher, type Profile } from "@/lib/useAuth";
 import type { Settings, Theme } from "@/lib/types";
 import { shrinkImage } from "@/lib/image";
+import { customColorVars } from "@/lib/theme";
 import { CapIcon, UserIcon } from "@/components/Icons";
 
 const TABS = ["ผลการเรียน", "ตั้งค่า", "ครู", "ประวัติ"] as const;
@@ -84,6 +85,14 @@ function SettingsTab({ name }: { name: string }) {
     }
   }
 
+  function pickColor(c: string | null) {
+    setS({ ...s!, primary_color: c });
+    const root = document.documentElement;
+    const vars = customColorVars(c);
+    for (const k of ["--primary", "--accent", "--hero", "--icon-a", "--icon-b", "--mesh-1", "--mesh-2", "--mesh-3", "--surface-2", "--border"]) root.style.removeProperty(k);
+    if (vars) for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, v);
+  }
+
   function pickTheme(t: Theme) {
     setS({ ...s!, theme: t });
     document.documentElement.dataset.theme = t; // live preview
@@ -94,7 +103,7 @@ function SettingsTab({ name }: { name: string }) {
     const { error } = await supabase().from("settings").update({
       system_name: s!.system_name, school_name: s!.school_name, logo_url: s!.logo_url, semester: s!.semester,
       academic_year: s!.academic_year, open_semesters: s!.open_semesters, levels: s!.levels, rooms: s!.rooms, open_at: s!.open_at, close_at: s!.close_at,
-      theme: s!.theme, updated_at: new Date().toISOString(),
+      theme: s!.theme, primary_color: s!.primary_color, updated_at: new Date().toISOString(),
     }).eq("id", 1);
     await fetch("/api/revalidate", { method: "POST" });
     logTeacher("update settings", name, "admin");
@@ -169,6 +178,23 @@ function SettingsTab({ name }: { name: string }) {
               {t.name}
             </button>
           ))}
+        </div>
+        <div className="space-y-2 border-t border-line pt-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold">สีประจำโรงเรียน</span>
+            {s.primary_color && <button className="text-xs text-muted underline" onClick={() => pickColor(null)}>ใช้สีตามธีม</button>}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {["#C8102E", "#B91C1C", "#1E3A8A", "#15803D", "#7C3AED", "#EA580C", "#DB2777", "#0F766E"].map((c) => (
+              <button key={c} aria-label={c} onClick={() => pickColor(c)}
+                className={`size-9 rounded-full border-2 ${s.primary_color?.toUpperCase() === c ? "border-[var(--text)]" : "border-white"}`} style={{ background: c }} />
+            ))}
+            <label className="btn btn-ghost min-h-9 cursor-pointer gap-2 px-3 text-sm">
+              <span className="size-4 rounded-full border" style={{ background: s.primary_color ?? "transparent" }} /> เลือกเอง
+              <input type="color" className="sr-only" value={s.primary_color ?? "#b91c1c"} onChange={(e) => pickColor(e.target.value)} />
+            </label>
+          </div>
+          <p className="text-xs text-muted">{s.primary_color ? `ใช้สี ${s.primary_color.toUpperCase()} แทนสีหลักของธีม` : "ยังไม่ได้เลือก — ใช้สีตามธีม"}</p>
         </div>
       </section>
 

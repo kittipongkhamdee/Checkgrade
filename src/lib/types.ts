@@ -12,6 +12,7 @@ export type Settings = {
   open_at: string | null;
   close_at: string | null;
   theme: Theme;
+  primary_color: string | null;
 };
 
 export type Subject = { code: string; name: string; type: string; hours: number | null; credit: number };

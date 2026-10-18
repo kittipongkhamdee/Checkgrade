@@ -2,7 +2,7 @@
 import { useRef, useState } from "react";
 import type { Settings, StudentTerm } from "@/lib/types";
 import { gradeColor } from "@/lib/format";
-import { CountUp, Reveal, confetti } from "@/components/Motion";
+import { CountUp, Reveal, schoolConfetti } from "@/components/Motion";
 
 const fmt = (v: unknown) => (v == null || v === "" ? "-" : String(v));
 
@@ -11,6 +11,7 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
   const [idx, setIdx] = useState(() => Math.max(0, sorted.findIndex((t) => t.semester === s.semester)));
   const t = sorted[idx] ?? sorted[0];
   const cardRef = useRef<HTMLDivElement>(null);
+  const certRef = useRef<HTMLDivElement>(null);
   const fullRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState<"" | "card" | "full">("");
   const [shot, setShot] = useState<{ url: string; file: File } | null>(null);
@@ -20,20 +21,20 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
 
   /** Render a node to PNG and open the save sheet. */
   async function capture(kind: "card" | "full") {
-    const node = kind === "card" ? cardRef.current : fullRef.current;
+    const node = kind === "card" ? certRef.current : fullRef.current;
     if (!node) return;
     setBusy(kind);
     fullRef.current?.classList.add("capturing");
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     try {
       const { toBlob } = await import("html-to-image");
-      const bg = getComputedStyle(document.body).backgroundColor;
+      const bg = kind === "card" ? "#ffffff" : getComputedStyle(document.body).backgroundColor;
       const blob = await toBlob(node, {
         pixelRatio: 2.5,
         backgroundColor: bg && bg !== "rgba(0, 0, 0, 0)" ? bg : "#ffffff",
-        width: node.offsetWidth + 32,
-        height: node.offsetHeight + 32,
-        style: { margin: "0", padding: "16px", boxSizing: "content-box" },
+        ...(kind === "full"
+          ? { width: node.offsetWidth + 32, height: node.offsetHeight + 32, style: { margin: "0", padding: "16px", boxSizing: "content-box" } }
+          : { style: { position: "static", left: "0" } }),
         filter: (n) => !(n instanceof HTMLElement && n.dataset.noCapture != null),
       });
       if (!blob) throw new Error("capture failed");
@@ -70,7 +71,7 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
         <div className="mt-5 flex items-end justify-between">
           <div>
             <div className="text-xs uppercase tracking-wider opacity-70">เกรดเฉลี่ย (GPA)</div>
-            <div className="text-6xl font-bold tabular-nums leading-none">{t.gpa != null ? <CountUp value={Number(t.gpa)} decimals={2} delay={500} onDone={() => Number(t.gpa) >= 2.5 && confetti()} /> : "-"}</div>
+            <div className="text-6xl font-bold tabular-nums leading-none">{t.gpa != null ? <CountUp value={Number(t.gpa)} decimals={2} delay={500} onDone={() => Number(t.gpa) >= 2.5 && schoolConfetti()} /> : "-"}</div>
           </div>
           <div className="text-right text-sm">
             <div>ลำดับที่ <b className="text-lg">{t.rank != null ? <CountUp value={Number(t.rank)} delay={500} /> : "-"}</b></div>
@@ -133,6 +134,7 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
         </button>
       </div>
 
+      <CertCard ref={certRef} t={t} s={s} credits={credits} />
       {shot && <SaveSheet shot={shot} onClose={() => { URL.revokeObjectURL(shot.url); setShot(null); }} />}
     </div>
   );
@@ -169,6 +171,40 @@ function SaveSheet({ shot, onClose }: { shot: { url: string; file: File }; onClo
           <button className="btn bg-white text-black" onClick={onClose}>ปิด</button>
         </div>
         {canShare && <button className="w-full text-center text-sm text-white/80 underline" onClick={download}>ดาวน์โหลดเป็นไฟล์</button>}
+      </div>
+    </div>
+  );
+}
+
+/** Certificate-style share card in the school colors (rendered off-screen, captured on demand). */
+function CertCard({ ref, t, s, credits }: { ref: React.Ref<HTMLDivElement>; t: StudentTerm; s: Settings; credits: number }) {
+  return (
+    <div ref={ref} aria-hidden className="fixed -left-[10000px] top-0 w-[540px] bg-white p-5 text-[#1f1416]">
+      <div className="rounded-[28px] bg-white p-[6px]" style={{ border: "5px solid var(--primary)" }}>
+        <div className="rounded-[20px] bg-white px-8 pb-8 pt-7 text-center" style={{ border: "1.5px solid var(--primary)" }}>
+          {s.logo_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={s.logo_url} alt="" crossOrigin="anonymous" className="mx-auto size-20 object-contain" />
+          ) : null}
+          <div className="mt-2 text-lg font-bold" style={{ color: "var(--primary)" }}>{s.school_name}</div>
+          <div className="mx-auto my-3 h-[3px] w-24 rounded-full" style={{ background: "var(--primary)" }} />
+          <div className="text-sm tracking-wide text-[#6b5458]">รายงานผลการเรียน ภาคเรียนที่ {t.semester}/{t.academic_year}</div>
+          <div className="mt-4 text-2xl font-bold">{t.full_name}</div>
+          <div className="text-[#6b5458]">{t.level}/{t.room} · เลขประจำตัว {t.student_code}</div>
+          <div className="mx-auto mt-5 w-fit rounded-3xl px-10 py-4 text-white" style={{ background: "var(--hero)" }}>
+            <div className="text-xs opacity-80">เกรดเฉลี่ย (GPA)</div>
+            <div className="text-6xl font-bold leading-none tabular-nums">{t.gpa != null ? Number(t.gpa).toFixed(2) : "-"}</div>
+          </div>
+          <div className="mt-5 grid grid-cols-3 gap-2 text-sm">
+            {[["ลำดับที่", fmt(t.rank)], ["หน่วยกิต", String(credits)], ["ร้อยละ", t.percent != null ? Number(t.percent).toFixed(2) : "-"]].map(([k, v]) => (
+              <div key={k} className="rounded-2xl border py-2" style={{ borderColor: "color-mix(in srgb, var(--primary) 25%, white)" }}>
+                <div className="text-xs text-[#6b5458]">{k}</div>
+                <div className="text-lg font-bold" style={{ color: "var(--primary)" }}>{v}</div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 text-xs text-[#8a7478]">{s.system_name}</div>
+        </div>
       </div>
     </div>
   );
