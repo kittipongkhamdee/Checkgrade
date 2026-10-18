@@ -7,6 +7,7 @@ export const DEFAULT_SETTINGS: Settings = {
   logo_url: null,
   semester: 1,
   academic_year: 2569,
+  open_semesters: [1],
   levels: [],
   rooms: [],
   open_at: null,

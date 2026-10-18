@@ -91,7 +91,7 @@ function SettingsTab({ name }: { name: string }) {
     setBusy(true);
     const { error } = await supabase().from("settings").update({
       system_name: s!.system_name, school_name: s!.school_name, logo_url: s!.logo_url, semester: s!.semester,
-      academic_year: s!.academic_year, levels: s!.levels, rooms: s!.rooms, open_at: s!.open_at, close_at: s!.close_at,
+      academic_year: s!.academic_year, open_semesters: s!.open_semesters, levels: s!.levels, rooms: s!.rooms, open_at: s!.open_at, close_at: s!.close_at,
       theme: s!.theme, updated_at: new Date().toISOString(),
     }).eq("id", 1);
     await fetch("/api/revalidate", { method: "POST" });
@@ -115,7 +115,13 @@ function SettingsTab({ name }: { name: string }) {
         <div><label className="label">ชื่อระบบ</label><input className="input" {...field("system_name")} /></div>
         <div><label className="label">ชื่อโรงเรียน</label><input className="input" {...field("school_name")} /></div>
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="label">ภาคเรียน</label><input className="input" inputMode="numeric" {...field("semester", true)} /></div>
+          <div>
+            <label className="label">ภาคเรียนที่รับอัปโหลด</label>
+            <select className="input" value={s.semester} onChange={(e) => setS({ ...s, semester: Number(e.target.value) })}>
+              <option value={1}>ภาคเรียนที่ 1</option>
+              <option value={2}>ภาคเรียนที่ 2</option>
+            </select>
+          </div>
           <div><label className="label">ปีการศึกษา</label><input className="input" inputMode="numeric" {...field("academic_year", true)} /></div>
         </div>
         <div>
@@ -130,6 +136,21 @@ function SettingsTab({ name }: { name: string }) {
 
       <section className="card space-y-3 p-4">
         <h2 className="font-semibold">เวลาเปิด-ปิดการตรวจสอบของนักเรียน</h2>
+        <div>
+          <label className="label">ภาคเรียนที่ประกาศผล (นักเรียนเห็น)</label>
+          <div className="grid grid-cols-2 gap-2">
+            {[1, 2].map((n) => {
+              const on = s.open_semesters.includes(n);
+              return (
+                <button key={n} type="button" onClick={() => setS({ ...s, open_semesters: on ? s.open_semesters.filter((x) => x !== n) : [...s.open_semesters, n].sort() })}
+                  className={`btn ${on ? "btn-primary" : "btn-ghost"}`}>
+                  {on ? "✓ " : ""}ภาคเรียนที่ {n}
+                </button>
+              );
+            })}
+          </div>
+          {s.open_semesters.length === 0 && <p className="mt-1 text-xs text-warn">ยังไม่ได้เลือกภาคเรียน นักเรียนจะตรวจสอบผลไม่ได้</p>}
+        </div>
         <div><label className="label">เปิด</label><input type="datetime-local" className="input" value={toLocal(s.open_at)} onChange={(e) => setS({ ...s, open_at: fromLocal(e.target.value) })} /></div>
         <div><label className="label">ปิด</label><input type="datetime-local" className="input" value={toLocal(s.close_at)} onChange={(e) => setS({ ...s, close_at: fromLocal(e.target.value) })} /></div>
         <p className="text-xs text-muted">เว้นว่างไว้ = ไม่จำกัดเวลา · ถ้ายังไม่ถึงเวลาเปิด นักเรียนจะเห็นการนับถอยหลัง</p>

@@ -13,7 +13,7 @@ export default async function Home() {
         <h1 className="text-2xl font-bold leading-tight">{s.system_name}</h1>
         <p className="mt-1 opacity-85">{s.school_name}</p>
         <p className="mt-3 inline-block rounded-full bg-white/15 px-3 py-1 text-sm">
-          ภาคเรียนที่ {s.semester} / {s.academic_year}
+          {s.open_semesters.length ? `ภาคเรียนที่ ${s.open_semesters.join(" และ ")} / ${s.academic_year}` : `ปีการศึกษา ${s.academic_year}`}
         </p>
       </section>
 

@@ -6,6 +6,7 @@ export type Settings = {
   logo_url: string | null;
   semester: number;
   academic_year: number;
+  open_semesters: number[];
   levels: string[];
   rooms: string[];
   open_at: string | null;

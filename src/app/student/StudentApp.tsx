@@ -90,7 +90,7 @@ export default function StudentApp({ settings: s }: { settings: Settings }) {
           <form onSubmit={lookup} className="card space-y-4 p-5">
             <div>
               <h2 className="text-lg font-semibold">ตรวจสอบผลการเรียน</h2>
-              <p className="text-sm text-muted">ภาคเรียนที่ {s.semester} ปีการศึกษา {s.academic_year}</p>
+              <p className="text-sm text-muted">{s.open_semesters.length ? `ภาคเรียนที่ ${s.open_semesters.join(" และ ")} / ${s.academic_year}` : `ปีการศึกษา ${s.academic_year}`}</p>
             </div>
             <div>
               <label className="label" htmlFor="code">เลขประจำตัวนักเรียน</label>

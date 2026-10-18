@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Guard } from "@/components/Guard";
 import { TopBar } from "@/components/TopBar";
 import { StudentTable } from "@/components/StudentTable";
@@ -8,6 +8,7 @@ import { SetMetaForm } from "@/components/SetMetaForm";
 import type { ParsedTerm } from "@/lib/excel";
 import { saveSet } from "@/lib/saveSet";
 import { logTeacher } from "@/lib/useAuth";
+import { supabase } from "@/lib/supabase";
 
 export default function UploadPage() {
   return <Guard>{(p) => <Upload name={p.full_name} />}</Guard>;
@@ -20,6 +21,11 @@ function Upload({ name }: { name: string }) {
   const [tab, setTab] = useState(0);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [active, setActive] = useState<{ semester: number; academic_year: number } | null>(null);
+
+  useEffect(() => {
+    supabase().from("settings").select("semester, academic_year").eq("id", 1).single().then(({ data }) => setActive(data));
+  }, []);
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -27,8 +33,13 @@ function Upload({ name }: { name: string }) {
     setErr("");
     try {
       const { parseWorkbook } = await import("@/lib/excel");
-      const parsed = parseWorkbook(await file.arrayBuffer()).filter((t) => t.students.length);
-      if (!parsed.length) return setErr("ไม่พบชีต เทอม1 / เทอม2 หรือไม่มีรายชื่อนักเรียน");
+      const all = parseWorkbook(await file.arrayBuffer()).filter((t) => t.students.length);
+      if (!all.length) return setErr("ไม่พบชีต เทอม1 / เทอม2 หรือไม่มีรายชื่อนักเรียน");
+      // Only the semester the admin opened for upload
+      const parsed = all
+        .filter((t) => !active || t.set.semester === active.semester)
+        .map((t) => (active ? { ...t, set: { ...t.set, academic_year: active.academic_year } } : t));
+      if (!parsed.length) return setErr(`ไฟล์นี้ไม่มีข้อมูลภาคเรียนที่ ${active?.semester}`);
       setTerms(parsed);
       setPick(parsed.map(() => true));
       setTab(0);
@@ -60,8 +71,10 @@ function Upload({ name }: { name: string }) {
         <label className="card flex cursor-pointer flex-col items-center gap-2 border-dashed p-6 text-center">
           <span className="text-3xl">📄</span>
           <span className="font-medium">{terms.length ? "เลือกไฟล์ใหม่" : "เลือกไฟล์ Excel (.xlsx)"}</span>
-          <span className="text-xs text-muted">ระบบจะอ่านชีต หน้าหลัก, เทอม1 และ เทอม2</span>
-          <input type="file" accept=".xlsx,.xls" className="hidden" onChange={onFile} />
+          <span className="text-xs text-muted">
+            {active ? `ระบบจะนำเข้าเฉพาะ ภาคเรียนที่ ${active.semester}/${active.academic_year} (ชีต เทอม${active.semester})` : "กำลังโหลดการตั้งค่า…"}
+          </span>
+          <input type="file" accept=".xlsx,.xls" className="hidden" onChange={onFile} disabled={!active} />
         </label>
         {err && <p className="text-sm text-bad">{err}</p>}
 
@@ -79,7 +92,7 @@ function Upload({ name }: { name: string }) {
               บันทึกภาคเรียนนี้
             </label>
             {t.warnings.map((w) => <p key={w} className="rounded-xl bg-surface-2 p-3 text-sm text-warn">⚠ {w} — ช่องสีเหลืองคือช่องที่ไม่มีเกรด</p>)}
-            <SetMetaForm set={t.set} onChange={(set) => patch({ set })} />
+            <SetMetaForm set={t.set} onChange={(set) => patch({ set })} lockTerm />
             <StudentTable subjects={t.set.subjects} rows={t.students} onChange={(students) => patch({ students })} />
           </>
         )}
