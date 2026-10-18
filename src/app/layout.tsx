@@ -30,7 +30,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const s = await getSettings();
   return (
     <html lang="th" data-theme={s.theme} className={thai.variable} style={{ colorScheme: "only light", ...customColorVars(s.primary_color) } as CSSProperties}>
-      <body className="antialiased">
+      <body className="antialiased pt-1.5">
+        <div className="school-stripe" aria-hidden />
         <div className="mesh fixed inset-0 -z-10" aria-hidden />
         <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
           <div className="float-a absolute -left-24 -top-24 size-80 rounded-full opacity-60 blur-3xl" style={{ background: "var(--mesh-1)" }} />

@@ -63,7 +63,7 @@ export default function StudentApp({ settings: s }: { settings: Settings }) {
 
   return (
     <main className="min-h-dvh pb-10">
-      <header className="glass sticky top-0 z-20 flex items-center gap-3 px-5 py-3 md:top-3 md:mt-3 md:rounded-2xl">
+      <header className="glass sticky top-1.5 z-20 flex items-center gap-3 px-5 py-3 md:top-3 md:mt-3 md:rounded-2xl">
         <Logo s={s} size={44} />
         <div className="min-w-0 flex-1">
           <div className="truncate font-semibold">{s.system_name}</div>
@@ -98,7 +98,7 @@ export default function StudentApp({ settings: s }: { settings: Settings }) {
             <div>
               <label className="label" htmlFor="code">เลขประจำตัวนักเรียน</label>
               <input id="code" className="input text-center text-xl tracking-widest" inputMode="numeric" autoComplete="off"
-                placeholder="เช่น 3213" value={code} onChange={(e) => setCode(e.target.value)} autoFocus />
+                placeholder="เช่น 0000" value={code} onChange={(e) => setCode(e.target.value)} autoFocus />
             </div>
             {error && <p className="text-sm text-bad">{error}</p>}
             <button className="btn btn-primary w-full" disabled={loading || !code.trim()}>

@@ -111,6 +111,12 @@ body {
 }
 
 @layer components {
+  /* School ribbon: red–white–red band across the top of every page */
+  .school-stripe {
+    position: fixed; inset: 0 0 auto 0; height: 6px; z-index: 40; pointer-events: none;
+    background: linear-gradient(to bottom, var(--primary) 0 3px, #ffffff 3px 4.5px, var(--primary) 4.5px 6px);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
+  }
   .card {
     background: color-mix(in srgb, #ffffff 62%, transparent);
     border: 1px solid color-mix(in srgb, #ffffff 85%, transparent);

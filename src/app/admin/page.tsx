@@ -23,7 +23,7 @@ function Admin({ p }: { p: Profile }) {
   return (
     <main className="pb-10">
       <TopBar title="ผู้ดูแลระบบ" right={<Link href="/teacher" className="btn btn-ghost min-h-9 px-3 text-sm">หน้าครู</Link>} />
-      <div className="glass sticky top-[61px] z-10 mx-3 mt-3 flex gap-1 overflow-x-auto rounded-2xl p-1.5 md:top-[76px]">
+      <div className="glass sticky top-[67px] z-10 mx-3 mt-3 flex gap-1 overflow-x-auto rounded-2xl p-1.5 md:top-[82px]">
         {TABS.map((t) => (
           <button key={t} onClick={() => setTab(t)} className={`shrink-0 rounded-xl px-3 py-2 text-sm font-medium ${t === tab ? "bg-primary text-primary-fg" : "text-muted"}`}>{t}</button>
         ))}
