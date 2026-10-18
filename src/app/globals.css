@@ -57,6 +57,25 @@
   --card-blur: none;
 }
 
+[data-theme="red"] {
+  --bg: #fbf7f7;
+  --surface: #ffffff;
+  --surface-2: #f8eded;
+  --text: #2a1215;
+  --muted: #7a5a5e;
+  --border: #f0e1e2;
+  --primary: #b91c1c;
+  --primary-fg: #ffffff;
+  --accent: #dc2626;
+  --ok: #15803d;
+  --warn: #b45309;
+  --bad: #9f1239;
+  --radius: 16px;
+  --shadow: 0 1px 2px rgb(127 29 29 / 0.06), 0 4px 16px rgb(127 29 29 / 0.06);
+  --hero: linear-gradient(135deg, #991b1b, #e11d48);
+  --card-blur: none;
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);

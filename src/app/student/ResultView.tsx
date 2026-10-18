@@ -78,15 +78,6 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
         </div>
       </div>
 
-      <div data-no-capture className="grid grid-cols-2 gap-2">
-        <button onClick={() => capture("card")} disabled={!!busy} className="btn btn-primary">
-          {busy === "card" ? "กำลังสร้าง…" : "🖼️ บันทึกการ์ด"}
-        </button>
-        <button onClick={() => capture("full")} disabled={!!busy} className="btn btn-ghost">
-          {busy === "full" ? "กำลังสร้าง…" : "📄 บันทึกทั้งหน้า"}
-        </button>
-      </div>
-
       </div>
       <div className="space-y-4">
       <div className="card divide-y divide-[var(--border)]">
@@ -123,6 +114,15 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
       </div>
       </div>
       <div className="pt-1 text-center text-xs text-muted lg:col-span-2">{s.system_name} · {s.school_name}</div>
+      </div>
+
+      <div data-no-capture className="mx-auto grid max-w-md grid-cols-2 gap-2">
+        <button onClick={() => capture("card")} disabled={!!busy} className="btn btn-primary">
+          {busy === "card" ? "กำลังสร้าง…" : "🖼️ บันทึกการ์ด"}
+        </button>
+        <button onClick={() => capture("full")} disabled={!!busy} className="btn btn-ghost">
+          {busy === "full" ? "กำลังสร้าง…" : "📄 บันทึกทั้งหน้า"}
+        </button>
       </div>
 
       {shot && <SaveSheet shot={shot} onClose={() => { URL.revokeObjectURL(shot.url); setShot(null); }} />}

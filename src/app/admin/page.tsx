@@ -48,6 +48,7 @@ const THEMES: { id: Theme; name: string; colors: string[] }[] = [
   { id: "academic", name: "Clean Academic", colors: ["#1e3a8a", "#2563eb", "#f6f8fb"] },
   { id: "pastel", name: "Soft Pastel", colors: ["#a78bfa", "#f472b6", "#ecfeff"] },
   { id: "mono", name: "Bold Mono", colors: ["#09090b", "#d9f99d", "#fafafa"] },
+  { id: "red", name: "Crimson Red", colors: ["#991b1b", "#e11d48", "#fbf7f7"] },
 ];
 
 function SettingsTab({ name }: { name: string }) {
@@ -159,7 +160,7 @@ function SettingsTab({ name }: { name: string }) {
 
       <section className="card space-y-3 p-4">
         <h2 className="font-semibold">สไตล์หน้าตา</h2>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {THEMES.map((t) => (
             <button key={t.id} onClick={() => pickTheme(t.id)}
               className={`rounded-xl border-2 p-2 text-xs ${s.theme === t.id ? "border-[var(--accent)]" : "border-line"}`}>

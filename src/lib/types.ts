@@ -1,4 +1,4 @@
-export type Theme = "academic" | "pastel" | "mono";
+export type Theme = "academic" | "pastel" | "mono" | "red";
 
 export type Settings = {
   system_name: string;
