@@ -1,0 +1,161 @@
+"use client";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import type { Settings, StudentTerm } from "@/lib/types";
+import { windowState } from "@/lib/format";
+import { Countdown } from "@/components/Countdown";
+import { Logo } from "@/components/Brand";
+import ResultView from "./ResultView";
+
+type Step = "input" | "confirm" | "result";
+const IDLE_MS = 3 * 60 * 1000;
+const WARN_S = 30;
+
+export default function StudentApp({ settings: s }: { settings: Settings }) {
+  const [state, setState] = useState(() => windowState(s.open_at, s.close_at));
+  const [step, setStep] = useState<Step>("input");
+  const [code, setCode] = useState("");
+  const [terms, setTerms] = useState<StudentTerm[]>([]);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const reset = useCallback(() => {
+    setStep("input");
+    setCode("");
+    setTerms([]);
+    setError("");
+  }, []);
+
+  async function lookup(e: React.FormEvent) {
+    e.preventDefault();
+    const c = code.trim();
+    if (!c) return;
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/student/${encodeURIComponent(c)}`);
+      const data = await res.json();
+      if (data.status === "ok") {
+        setTerms(data.terms);
+        setStep("confirm");
+      } else if (data.status === "closed") {
+        setState(windowState(s.open_at, s.close_at));
+        setError("ระบบยังไม่เปิดให้ตรวจสอบในขณะนี้");
+      } else {
+        setError("ไม่พบเลขประจำตัวนี้ กรุณาตรวจสอบอีกครั้ง");
+      }
+    } catch {
+      setError("เชื่อมต่อไม่สำเร็จ กรุณาลองใหม่");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function confirm() {
+    setStep("result");
+    supabase().rpc("log_student", { p_code: code.trim(), p_name: terms[0]?.full_name ?? "", p_action: "view" }).then(() => {});
+  }
+
+  const first = terms[0];
+
+  return (
+    <main className="min-h-dvh pb-10">
+      <header className="hero flex items-center gap-3 px-5 pb-6 pt-8">
+        <Logo s={s} size={44} />
+        <div className="min-w-0 flex-1">
+          <div className="truncate font-semibold">{s.system_name}</div>
+          <div className="truncate text-sm opacity-80">{s.school_name}</div>
+        </div>
+        {step === "result" ? (
+          <button onClick={reset} className="rounded-full bg-white/15 px-3 py-1.5 text-sm">ออกจากระบบ</button>
+        ) : (
+          <Link href="/" className="rounded-full bg-white/15 px-3 py-1.5 text-sm">หน้าแรก</Link>
+        )}
+      </header>
+
+      <div className="px-5 pt-5">
+        {state === "before" && s.open_at ? (
+          <div className="space-y-4 text-center">
+            <h2 className="text-lg font-semibold">ระบบจะเปิดให้ตรวจสอบในอีก</h2>
+            <Countdown to={s.open_at} onDone={() => setState("open")} />
+            <p className="text-sm text-muted">กรุณารอสักครู่ หน้านี้จะเปิดให้ใช้งานอัตโนมัติ</p>
+          </div>
+        ) : state === "after" ? (
+          <div className="card p-6 text-center">
+            <div className="text-4xl">🔒</div>
+            <h2 className="mt-2 text-lg font-semibold">ปิดการตรวจสอบผลการเรียนแล้ว</h2>
+            <p className="text-sm text-muted">ติดต่อครูประจำชั้นหากมีข้อสงสัย</p>
+          </div>
+        ) : step === "input" ? (
+          <form onSubmit={lookup} className="card space-y-4 p-5">
+            <div>
+              <h2 className="text-lg font-semibold">ตรวจสอบผลการเรียน</h2>
+              <p className="text-sm text-muted">ภาคเรียนที่ {s.semester} ปีการศึกษา {s.academic_year}</p>
+            </div>
+            <div>
+              <label className="label" htmlFor="code">เลขประจำตัวนักเรียน</label>
+              <input id="code" className="input text-center text-xl tracking-widest" inputMode="numeric" autoComplete="off"
+                placeholder="เช่น 3213" value={code} onChange={(e) => setCode(e.target.value)} autoFocus />
+            </div>
+            {error && <p className="text-sm text-bad">{error}</p>}
+            <button className="btn btn-primary w-full" disabled={loading || !code.trim()}>
+              {loading ? "กำลังค้นหา…" : "ค้นหา"}
+            </button>
+          </form>
+        ) : step === "confirm" && first ? (
+          <div className="card space-y-4 p-6 text-center">
+            <p className="text-sm text-muted">กรุณายืนยันว่าเป็นข้อมูลของคุณ</p>
+            <div className="mx-auto grid size-16 place-items-center rounded-full bg-surface-2 text-3xl">🧑‍🎓</div>
+            <div>
+              <div className="text-xl font-semibold">{first.full_name}</div>
+              <div className="text-muted">{first.level} / {first.room} · เลขที่ {first.no ?? "-"}</div>
+              <div className="text-sm text-muted">เลขประจำตัว {first.student_code}</div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={reset} className="btn btn-ghost">ไม่ใช่</button>
+              <button onClick={confirm} className="btn btn-primary">ตกลง</button>
+            </div>
+          </div>
+        ) : step === "result" ? (
+          <ResultView terms={terms} settings={s} />
+        ) : null}
+      </div>
+
+      {step !== "input" && <IdleGuard onLogout={reset} />}
+    </main>
+  );
+}
+
+/** Auto sign-out after inactivity, with a warning dialog. */
+function IdleGuard({ onLogout }: { onLogout: () => void }) {
+  const [warn, setWarn] = useState<number | null>(null);
+  const last = useRef(Date.now());
+
+  useEffect(() => {
+    const bump = () => { last.current = Date.now(); setWarn(null); };
+    const evs = ["pointerdown", "keydown", "scroll", "touchstart"];
+    evs.forEach((e) => window.addEventListener(e, bump, { passive: true }));
+    const t = setInterval(() => {
+      const idle = Date.now() - last.current;
+      if (idle >= IDLE_MS + WARN_S * 1000) onLogout();
+      else if (idle >= IDLE_MS) setWarn(Math.ceil((IDLE_MS + WARN_S * 1000 - idle) / 1000));
+    }, 1000);
+    return () => { evs.forEach((e) => window.removeEventListener(e, bump)); clearInterval(t); };
+  }, [onLogout]);
+
+  if (warn == null) return null;
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-6">
+      <div className="card w-full max-w-sm space-y-3 bg-surface p-6 text-center" style={{ background: "var(--surface)" }}>
+        <div className="text-3xl">⏳</div>
+        <h3 className="text-lg font-semibold">ออกจากระบบอัตโนมัติ</h3>
+        <p className="text-muted">ไม่มีการใช้งาน ระบบจะออกจากระบบใน <b className="tabular-nums">{warn}</b> วินาที</p>
+        <div className="grid grid-cols-2 gap-3">
+          <button className="btn btn-ghost" onClick={onLogout}>ออกเลย</button>
+          <button className="btn btn-primary" onClick={() => { setWarn(null); }}>ใช้งานต่อ</button>
+        </div>
+      </div>
+    </div>
+  );
+}
