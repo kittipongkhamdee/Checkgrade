@@ -19,6 +19,8 @@
   --shadow: 0 1px 2px rgb(15 27 45 / 0.06), 0 4px 16px rgb(15 27 45 / 0.05);
   --hero: linear-gradient(135deg, #1e3a8a, #2563eb);
   --card-blur: none;
+  --mesh-1: #bfdbfe; --mesh-2: #ddd6fe; --mesh-3: #fbcfe8;
+  --icon-a: linear-gradient(135deg, #0a84ff, #5e5ce6); --icon-b: linear-gradient(135deg, #ff9f0a, #ff375f);
 }
 [data-theme="pastel"] {
   --bg: linear-gradient(160deg, #fdf2f8 0%, #eef2ff 50%, #ecfeff 100%);
@@ -37,6 +39,8 @@
   --shadow: 0 8px 32px rgb(124 58 237 / 0.12);
   --hero: linear-gradient(135deg, #a78bfa, #f472b6);
   --card-blur: blur(16px);
+  --mesh-1: #c4b5fd; --mesh-2: #a5f3fc; --mesh-3: #f9a8d4;
+  --icon-a: linear-gradient(135deg, #8b5cf6, #6366f1); --icon-b: linear-gradient(135deg, #ec4899, #f97316);
 }
 [data-theme="mono"] {
   --bg: #fafafa;
@@ -55,6 +59,8 @@
   --shadow: none;
   --hero: #09090b;
   --card-blur: none;
+  --mesh-1: #e4e4e7; --mesh-2: #ecfccb; --mesh-3: #f4f4f5;
+  --icon-a: #09090b; --icon-b: linear-gradient(135deg, #84cc16, #4d7c0f);
 }
 
 [data-theme="red"] {
@@ -74,6 +80,8 @@
   --shadow: 0 1px 2px rgb(127 29 29 / 0.06), 0 4px 16px rgb(127 29 29 / 0.06);
   --hero: linear-gradient(135deg, #991b1b, #e11d48);
   --card-blur: none;
+  --mesh-1: #fecaca; --mesh-2: #fde2e4; --mesh-3: #fed7aa;
+  --icon-a: linear-gradient(135deg, #dc2626, #9f1239); --icon-b: linear-gradient(135deg, #f97316, #e11d48);
 }
 
 @theme inline {
@@ -108,6 +116,21 @@ body {
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     backdrop-filter: var(--card-blur);
+  }
+  /* Apple-style frosted glass */
+  .glass {
+    background: color-mix(in srgb, #ffffff 58%, transparent);
+    border: 1px solid color-mix(in srgb, #ffffff 85%, transparent);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    box-shadow: 0 8px 30px rgb(60 70 140 / 0.10), inset 0 1px 0 rgb(255 255 255 / 0.7);
+  }
+  .mesh {
+    background:
+      radial-gradient(80% 55% at 0% 0%, var(--mesh-1) 0%, transparent 75%),
+      radial-gradient(70% 50% at 100% 40%, var(--mesh-2) 0%, transparent 75%),
+      radial-gradient(90% 60% at 60% 100%, var(--mesh-3) 0%, transparent 75%),
+      var(--bg);
   }
   .hero { background: var(--hero); color: var(--primary-fg); }
   .btn {
