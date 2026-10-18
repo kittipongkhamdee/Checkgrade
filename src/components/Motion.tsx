@@ -57,6 +57,7 @@ export function themeColors(vars = ["--primary", "--accent", "--mesh-1"]) {
 export const schoolConfetti = () => {
   const [p, a, m] = themeColors();
   confetti([p, p, a, "#ffffff", "#ffffff", m]);
+  applause();
 };
 
 /** One-shot confetti burst on a full-screen canvas. */
@@ -86,4 +87,59 @@ export function confetti(colors = ["#0a84ff", "#5e5ce6", "#ff375f", "#ff9f0a", "
     if (now - t0 < 2600) requestAnimationFrame(frame); else c.remove();
   };
   requestAnimationFrame(frame);
+}
+
+// ---- Sound: synthesized with Web Audio (no audio files to download) ----
+let ctx: AudioContext | null = null;
+const MUTE_KEY = "cg-muted";
+
+export const isMuted = () => { try { return localStorage.getItem(MUTE_KEY) === "1"; } catch { return false; } };
+export const setMuted = (m: boolean) => { try { localStorage.setItem(MUTE_KEY, m ? "1" : "0"); } catch { /* ignore */ } };
+
+/** Must run inside a user tap (e.g. the "ตกลง" button) so mobile browsers allow sound later. */
+export function unlockAudio() {
+  try {
+    const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    ctx ??= new AC();
+    if (ctx.state === "suspended") ctx.resume();
+  } catch { /* no audio support */ }
+}
+
+/** Party-popper "pop" followed by ~3s of crowd applause that swells and fades. */
+export function applause() {
+  if (!ctx || isMuted() || reduced()) return;
+  const a = ctx;
+  const now = a.currentTime;
+  const noise = a.createBuffer(1, a.sampleRate * 0.05, a.sampleRate);
+  const d = noise.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (a.sampleRate * 0.008));
+
+  const master = a.createGain();
+  master.gain.value = 0.9;
+  master.connect(a.destination);
+
+  // pop
+  const pop = a.createBufferSource();
+  pop.buffer = noise;
+  const popF = a.createBiquadFilter();
+  popF.type = "lowpass"; popF.frequency.value = 1800;
+  const popG = a.createGain(); popG.gain.value = 1.4;
+  pop.connect(popF).connect(popG).connect(master);
+  pop.start(now);
+
+  // applause: many short filtered noise bursts (= individual claps)
+  const dur = 3.2;
+  for (let i = 0; i < 260; i++) {
+    const t = now + 0.08 + Math.random() * dur;
+    const env = Math.sin(Math.PI * Math.min(1, (t - now) / dur)) ** 0.6; // swell then fade
+    const src = a.createBufferSource();
+    src.buffer = noise;
+    src.playbackRate.value = 0.8 + Math.random() * 0.6;
+    const f = a.createBiquadFilter();
+    f.type = "bandpass"; f.frequency.value = 900 + Math.random() * 1800; f.Q.value = 0.8;
+    const g = a.createGain();
+    g.gain.value = (0.15 + Math.random() * 0.25) * env;
+    src.connect(f).connect(g).connect(master);
+    src.start(t);
+  }
 }

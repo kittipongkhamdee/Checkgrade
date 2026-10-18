@@ -7,6 +7,7 @@ import { Countdown } from "@/components/Countdown";
 import { Logo } from "@/components/Brand";
 import ResultView from "./ResultView";
 import { UserIcon } from "@/components/Icons";
+import { isMuted, setMuted, unlockAudio } from "@/components/Motion";
 
 type Step = "input" | "confirm" | "opening" | "result";
 const IDLE_MS = 3 * 60 * 1000;
@@ -53,6 +54,7 @@ export default function StudentApp({ settings: s }: { settings: Settings }) {
   }
 
   function confirm() {
+    unlockAudio();
     // short drum-roll before revealing results
     setStep("opening");
     setTimeout(() => setStep((st) => (st === "opening" ? "result" : st)), 1400);
@@ -69,6 +71,7 @@ export default function StudentApp({ settings: s }: { settings: Settings }) {
           <div className="truncate font-semibold">{s.system_name}</div>
           <div className="truncate text-sm text-muted">{s.school_name}</div>
         </div>
+        {step === "result" && <SoundToggle />}
         {step === "result" ? (
           <button onClick={reset} className="btn btn-ghost min-h-9 px-3 text-sm">ออกจากระบบ</button>
         ) : (
@@ -168,5 +171,15 @@ function IdleGuard({ onLogout }: { onLogout: () => void }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function SoundToggle() {
+  const [muted, set] = useState(isMuted);
+  return (
+    <button aria-label={muted ? "เปิดเสียง" : "ปิดเสียง"} className="btn btn-ghost min-h-9 px-2.5 text-base"
+      onClick={() => { setMuted(!muted); set(!muted); }}>
+      {muted ? "🔇" : "🔊"}
+    </button>
   );
 }
