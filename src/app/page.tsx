@@ -39,7 +39,7 @@ export default async function Home() {
           <div className="mb-1 font-semibold">ช่วงเวลาตรวจสอบผล</div>
           <div className="text-muted">เปิด: {thaiDateTime(s.open_at)}</div>
           <div className="text-muted">ปิด: {thaiDateTime(s.close_at)}</div>
-          <div className="mt-2 font-medium" style={{ color: state === "open" ? "var(--ok)" : "var(--warn)" }}>
+          <div className="mt-2 font-semibold" style={{ color: state === "open" ? "var(--ok)" : "var(--warn)" }}>
             {state === "open" ? "● เปิดให้ตรวจสอบแล้ว" : state === "before" ? "● ยังไม่เปิดให้ตรวจสอบ" : "● ปิดการตรวจสอบแล้ว"}
           </div>
         </div>

@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from "next";
+import { IBM_Plex_Sans_Thai } from "next/font/google";
 import "./globals.css";
+
+const thai = IBM_Plex_Sans_Thai({ subsets: ["thai", "latin"], weight: ["400", "600", "700"], variable: "--font-thai", display: "swap" });
 import { getSettings } from "@/lib/settings";
 
 export const revalidate = 60;
@@ -14,7 +17,7 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, them
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const s = await getSettings();
   return (
-    <html lang="th" data-theme={s.theme}>
+    <html lang="th" data-theme={s.theme} className={thai.variable}>
       <body className="antialiased">
         <div className="mx-auto min-h-dvh w-full max-w-md">{children}</div>
       </body>

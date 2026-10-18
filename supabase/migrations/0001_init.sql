@@ -151,3 +151,8 @@ create policy assets_admin_update on storage.objects for update to authenticated
 
 -- trigger functions are not callable via API
 revoke execute on function public.guard_profile(), public.handle_new_user() from authenticated, anon, public;
+
+-- upsert needs select; logos are small images only
+create policy assets_admin_select on storage.objects for select to authenticated using (bucket_id = 'assets' and public.is_admin());
+create policy assets_admin_delete on storage.objects for delete to authenticated using (bucket_id = 'assets' and public.is_admin());
+update storage.buckets set file_size_limit = 1048576, allowed_mime_types = array['image/webp','image/png','image/jpeg'] where id = 'assets';

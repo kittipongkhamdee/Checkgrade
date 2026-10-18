@@ -1,6 +1,5 @@
 "use client";
 import { useRef, useState } from "react";
-import { toPng } from "html-to-image";
 import type { Settings, StudentTerm } from "@/lib/types";
 import { gradeColor } from "@/lib/format";
 
@@ -20,6 +19,7 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
     if (!cardRef.current) return;
     setBusy(true);
     try {
+      const { toPng } = await import("html-to-image");
       const url = await toPng(cardRef.current, { pixelRatio: 3, cacheBust: true });
       const blob = await (await fetch(url)).blob();
       const file = new File([blob], `ผลการเรียน-${t.student_code}.png`, { type: "image/png" });

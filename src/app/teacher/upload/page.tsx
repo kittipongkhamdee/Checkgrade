@@ -5,7 +5,7 @@ import { Guard } from "@/components/Guard";
 import { TopBar } from "@/components/TopBar";
 import { StudentTable } from "@/components/StudentTable";
 import { SetMetaForm } from "@/components/SetMetaForm";
-import { parseWorkbook, type ParsedTerm } from "@/lib/excel";
+import type { ParsedTerm } from "@/lib/excel";
 import { saveSet } from "@/lib/saveSet";
 import { logTeacher } from "@/lib/useAuth";
 
@@ -26,6 +26,7 @@ function Upload({ name }: { name: string }) {
     if (!file) return;
     setErr("");
     try {
+      const { parseWorkbook } = await import("@/lib/excel");
       const parsed = parseWorkbook(await file.arrayBuffer()).filter((t) => t.students.length);
       if (!parsed.length) return setErr("ไม่พบชีต เทอม1 / เทอม2 หรือไม่มีรายชื่อนักเรียน");
       setTerms(parsed);

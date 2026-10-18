@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { thaiDateTime } from "@/lib/format";
 import { logTeacher, type Profile } from "@/lib/useAuth";
 import type { Settings, Theme } from "@/lib/types";
+import { shrinkImage } from "@/lib/image";
 
 const TABS = ["ตั้งค่า", "ครู", "ประวัติ", "แชร์ลิงก์"] as const;
 
@@ -66,11 +67,19 @@ function SettingsTab({ name }: { name: string }) {
 
   async function uploadLogo(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file || !s) return;
-    const path = `logo-${Date.now()}.${file.name.split(".").pop()}`;
-    const { error } = await supabase().storage.from("assets").upload(path, file, { upsert: true });
-    if (error) return setMsg("อัปโหลดโลโก้ไม่สำเร็จ: " + error.message);
-    setS({ ...s, logo_url: supabase().storage.from("assets").getPublicUrl(path).data.publicUrl });
+    setMsg("กำลังอัปโหลดโลโก้…");
+    try {
+      const blob = await shrinkImage(file);
+      const path = `logo-${Date.now()}.webp`;
+      const { error } = await supabase().storage.from("assets").upload(path, blob, { contentType: "image/webp", cacheControl: "31536000" });
+      if (error) throw error;
+      setS({ ...s, logo_url: supabase().storage.from("assets").getPublicUrl(path).data.publicUrl });
+      setMsg(`อัปโหลดโลโก้แล้ว (${Math.round(blob.size / 1024)} KB) — กด "บันทึกการตั้งค่า" เพื่อใช้งาน`);
+    } catch (err) {
+      setMsg("อัปโหลดโลโก้ไม่สำเร็จ: " + (err as Error).message);
+    }
   }
 
   function pickTheme(t: Theme) {
@@ -102,6 +111,7 @@ function SettingsTab({ name }: { name: string }) {
           ) : <div className="grid size-16 place-items-center rounded-xl bg-surface-2 text-2xl">🎓</div>}
           <label className="btn btn-ghost cursor-pointer">เปลี่ยนโลโก้<input type="file" accept="image/*" className="hidden" onChange={uploadLogo} /></label>
         </div>
+        {msg.includes("โลโก้") && <p className="text-sm text-muted">{msg}</p>}
         <div><label className="label">ชื่อระบบ</label><input className="input" {...field("system_name")} /></div>
         <div><label className="label">ชื่อโรงเรียน</label><input className="input" {...field("school_name")} /></div>
         <div className="grid grid-cols-2 gap-3">

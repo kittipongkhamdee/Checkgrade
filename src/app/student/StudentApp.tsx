@@ -1,7 +1,6 @@
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import type { Settings, StudentTerm } from "@/lib/types";
 import { windowState } from "@/lib/format";
 import { Countdown } from "@/components/Countdown";
@@ -54,7 +53,7 @@ export default function StudentApp({ settings: s }: { settings: Settings }) {
 
   function confirm() {
     setStep("result");
-    supabase().rpc("log_student", { p_code: code.trim(), p_name: terms[0]?.full_name ?? "", p_action: "view" }).then(() => {});
+    fetch("/api/log", { method: "POST", body: JSON.stringify({ code: code.trim(), name: terms[0]?.full_name ?? "" }), keepalive: true }).catch(() => {});
   }
 
   const first = terms[0];
