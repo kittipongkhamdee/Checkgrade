@@ -10,7 +10,7 @@ import { logTeacher, type Profile } from "@/lib/useAuth";
 import type { Settings, Theme } from "@/lib/types";
 import { shrinkImage } from "@/lib/image";
 
-const TABS = ["ผลการเรียน", "ตั้งค่า", "ครู", "ประวัติ", "แชร์ลิงก์"] as const;
+const TABS = ["ผลการเรียน", "ตั้งค่า", "ครู", "ประวัติ"] as const;
 
 export default function AdminPage() {
   return <Guard adminOnly>{(p) => <Admin p={p} />}</Guard>;
@@ -31,7 +31,6 @@ function Admin({ p }: { p: Profile }) {
         {tab === "ตั้งค่า" && <SettingsTab name={p.full_name} />}
         {tab === "ครู" && <TeachersTab me={p.id} />}
         {tab === "ประวัติ" && <LogsTab />}
-        {tab === "แชร์ลิงก์" && <ShareTab />}
       </div>
     </main>
   );
@@ -103,6 +102,7 @@ function SettingsTab({ name }: { name: string }) {
 
   return (
     <div className="space-y-4">
+      <ShareLink />
       <section className="card space-y-3 p-4">
         <h2 className="font-semibold">ข้อมูลระบบ</h2>
         <div className="flex items-center gap-3">
@@ -249,50 +249,38 @@ function LogsTab() {
   );
 }
 
-function ShareTab() {
-  const [origin, setOrigin] = useState("");
-  const [qr, setQr] = useState<Record<string, string>>({});
-  const [copied, setCopied] = useState("");
-  const links = [
-    { key: "student", label: "ลิงก์สำหรับนักเรียน", path: "/student" },
-    { key: "home", label: "หน้าแรก", path: "/" },
-    { key: "teacher", label: "ลิงก์สำหรับครู", path: "/teacher" },
-  ];
+/** Home page link + QR, for posting to students and teachers. */
+function ShareLink() {
+  const [url, setUrl] = useState("");
+  const [qr, setQr] = useState("");
+  const [copied, setCopied] = useState(false);
   useEffect(() => {
-    const o = window.location.origin;
-    setOrigin(o);
-    Promise.all(links.map(async (l) => [l.key, await QRCode.toDataURL(o + l.path, { width: 512, margin: 1 })] as const)).then((r) => setQr(Object.fromEntries(r)));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const u = window.location.origin + "/";
+    setUrl(u);
+    QRCode.toDataURL(u, { width: 512, margin: 1 }).then(setQr);
   }, []);
 
-  async function copy(text: string, key: string) {
-    await navigator.clipboard.writeText(text);
-    setCopied(key);
-    setTimeout(() => setCopied(""), 1500);
+  async function copy() {
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
   }
 
   return (
-    <div className="space-y-4">
-      {links.map((l) => {
-        const url = origin + l.path;
-        return (
-          <div key={l.key} className="card space-y-3 p-4">
-            <div className="font-semibold">{l.label}</div>
-            <div className="flex gap-2">
-              <input readOnly className="input text-sm" value={url} onFocus={(e) => e.target.select()} />
-              <button className="btn btn-primary shrink-0" onClick={() => copy(url, l.key)}>{copied === l.key ? "✓" : "คัดลอก"}</button>
-            </div>
-            {qr[l.key] && (
-              <div className="flex items-center gap-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={qr[l.key]} alt={`QR ${l.label}`} className="size-28 rounded-lg bg-white p-1" />
-                <a href={qr[l.key]} download={`qr-${l.key}.png`} className="btn btn-ghost">⬇ ดาวน์โหลด QR</a>
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
+    <section className="card space-y-3 p-4">
+      <h2 className="font-semibold">ลิงก์ระบบ</h2>
+      <div className="flex gap-2">
+        <input readOnly className="input text-sm" value={url} onFocus={(e) => e.target.select()} />
+        <button className="btn btn-primary shrink-0" onClick={copy}>{copied ? "✓ คัดลอกแล้ว" : "คัดลอก"}</button>
+      </div>
+      {qr && (
+        <div className="flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={qr} alt="QR หน้าแรก" className="size-28 rounded-lg bg-white p-1" />
+          <a href={qr} download="qr-checkgrade.png" className="btn btn-ghost">⬇ ดาวน์โหลด QR</a>
+        </div>
+      )}
+    </section>
   );
 }
 
