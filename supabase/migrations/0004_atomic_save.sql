@@ -34,9 +34,9 @@ end $$;
 revoke execute on function public.save_report_set(jsonb, jsonb) from anon, public;
 grant execute on function public.save_report_set(jsonb, jsonb) to authenticated;
 
--- ลบประวัติการใช้งานที่เก่ากว่า 180 วัน (เรียกวันละครั้งโดย Vercel)
+-- ลบประวัติการใช้งานที่เก่ากว่า 90 วัน (เรียกวันละครั้งโดย Vercel)
 create or replace function public.keepalive() returns int language sql security definer set search_path = '' as $$
-  with d as (delete from public.access_logs where created_at < now() - interval '180 days' returning 1)
+  with d as (delete from public.access_logs where created_at < now() - interval '90 days' returning 1)
   select count(*)::int from d
 $$;
 revoke execute on function public.keepalive() from public, authenticated;

@@ -246,12 +246,21 @@ type Log = { id: number; role: string; actor: string; name: string | null; actio
 
 function LogsTab() {
   const [role, setRole] = useState<"student" | "teacher">("student");
+  const [q, setQ] = useState("");
   const [logs, setLogs] = useState<Log[] | null>(null);
+
   useEffect(() => {
     setLogs(null);
-    const q = supabase().from("access_logs").select("*").order("created_at", { ascending: false }).limit(300);
-    (role === "student" ? q.eq("role", "student") : q.in("role", ["teacher", "admin"])).then(({ data }) => setLogs((data as Log[]) ?? []));
-  }, [role]);
+    const t = setTimeout(() => {
+      let query = supabase().from("access_logs").select("*").order("created_at", { ascending: false }).limit(100);
+      query = role === "student" ? query.eq("role", "student") : query.in("role", ["teacher", "admin"]);
+      const term = q.trim().replace(/[%,()]/g, "");
+      if (term) query = query.or(`name.ilike.%${term}%,actor.ilike.%${term}%`);
+      query.then(({ data }) => setLogs((data as Log[]) ?? []));
+    }, 250);
+    return () => clearTimeout(t);
+  }, [role, q]);
+
   return (
     <div className="space-y-3">
       <div className="card grid grid-cols-2 gap-1 p-1">
@@ -261,7 +270,10 @@ function LogsTab() {
           </button>
         ))}
       </div>
-      {!logs ? <div className="skeleton h-40" /> : logs.length === 0 ? <p className="text-center text-sm text-muted">ยังไม่มีประวัติ</p> : (
+      {role === "student" && <ViewSummary />}
+      <input className="input" placeholder={role === "student" ? "ค้นหาชื่อ หรือเลขประจำตัว" : "ค้นหาชื่อครู"} value={q} onChange={(e) => setQ(e.target.value)} />
+      <p className="text-xs text-muted">แสดงล่าสุด 100 รายการ · เก็บประวัติย้อนหลัง 90 วัน</p>
+      {!logs ? <div className="skeleton h-40" /> : logs.length === 0 ? <p className="text-center text-sm text-muted">ไม่พบรายการ</p> : (
         <div className="card divide-y divide-[var(--border)]">
           {logs.map((l) => (
             <div key={l.id} className="flex gap-3 px-4 py-2.5 text-sm">
@@ -274,6 +286,73 @@ function LogsTab() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+type ResultRow = { student_code: string; full_name: string; no: number | null; report_sets: { level: string; room: string; semester: number; academic_year: number } };
+
+/** Per class: how many students have opened their results (published semesters only). */
+function ViewSummary() {
+  const [rows, setRows] = useState<{ cls: string; total: ResultRow[]; seen: Set<string> }[] | null>(null);
+  const [open, setOpen] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const sb = supabase();
+      const { data: st } = await sb.from("settings").select("academic_year, open_semesters").eq("id", 1).single();
+      const [{ data: res }, { data: logs }] = await Promise.all([
+        sb.from("student_results").select("student_code, full_name, no, report_sets!inner(level, room, semester, academic_year)")
+          .eq("report_sets.academic_year", st?.academic_year ?? 0).in("report_sets.semester", st?.open_semesters ?? []).limit(5000),
+        sb.from("access_logs").select("actor").eq("role", "student").limit(20000),
+      ]);
+      const seen = new Set((logs ?? []).map((l) => l.actor));
+      const byClass = new Map<string, Map<string, ResultRow>>();
+      for (const r of (res as unknown as ResultRow[]) ?? []) {
+        const k = `${r.report_sets.level}/${r.report_sets.room}`;
+        if (!byClass.has(k)) byClass.set(k, new Map());
+        byClass.get(k)!.set(r.student_code, r); // one entry per student even if 2 semesters are open
+      }
+      setRows([...byClass.entries()]
+        .sort(([a], [b]) => a.localeCompare(b, "th", { numeric: true }))
+        .map(([cls, m]) => ({ cls, total: [...m.values()].sort((a, b) => (a.no ?? 0) - (b.no ?? 0)), seen })));
+    })();
+  }, []);
+
+  if (!rows) return <div className="skeleton h-24" />;
+  if (!rows.length) return null;
+  const all = rows.reduce((a, r) => a + r.total.length, 0);
+  const seenAll = rows.reduce((a, r) => a + r.total.filter((x) => r.seen.has(x.student_code)).length, 0);
+
+  return (
+    <div className="card space-y-3 p-4">
+      <div className="flex items-end justify-between">
+        <div className="font-semibold">นักเรียนที่เข้าดูผลแล้ว</div>
+        <div className="text-sm"><b className="text-lg tabular-nums">{seenAll}</b> / {all} คน</div>
+      </div>
+      {rows.map((r) => {
+        const seenN = r.total.filter((x) => r.seen.has(x.student_code)).length;
+        const pct = r.total.length ? (seenN / r.total.length) * 100 : 0;
+        const missing = r.total.filter((x) => !r.seen.has(x.student_code));
+        return (
+          <div key={r.cls}>
+            <button className="w-full text-left" onClick={() => setOpen(open === r.cls ? null : r.cls)}>
+              <div className="flex justify-between text-sm">
+                <span className="font-medium">{r.cls}</span>
+                <span className="tabular-nums text-muted">{seenN}/{r.total.length} · ยังไม่ดู {missing.length} {missing.length ? (open === r.cls ? "▲" : "▼") : ""}</span>
+              </div>
+              <div className="mt-1 h-2 rounded-full bg-surface-2">
+                <div className="h-2 rounded-full transition-all" style={{ width: `${pct}%`, background: "var(--primary)" }} />
+              </div>
+            </button>
+            {open === r.cls && missing.length > 0 && (
+              <ul className="mt-2 space-y-0.5 rounded-xl bg-surface-2 p-3 text-sm">
+                {missing.map((m) => <li key={m.student_code}>{m.no ?? "-"}. {m.full_name} <span className="text-xs text-muted">({m.student_code})</span></li>)}
+              </ul>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
