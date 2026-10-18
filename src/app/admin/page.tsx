@@ -189,18 +189,19 @@ function TeachersTab({ me }: { me: string }) {
   if (!list) return <div className="skeleton h-40" />;
   return (
     <div className="space-y-2">
-      <p className="text-sm text-muted">ครูทั้งหมด {list.length} คน</p>
+      <p className="text-sm text-muted">ครูทั้งหมด {list.length} คน · รออนุมัติ {list.filter((t) => !t.active).length} คน</p>
       {list.map((t) => (
         <div key={t.id} className="card flex items-center gap-3 p-3">
           <div className="grid size-10 place-items-center rounded-full bg-surface-2">{t.role === "admin" ? "⭐" : "👩‍🏫"}</div>
           <div className="min-w-0 flex-1">
             <div className="truncate font-medium">{t.full_name || "-"}</div>
             <div className="truncate text-xs text-muted">{t.email} · {t.role === "admin" ? "แอดมิน" : "ครู"}</div>
+            {!t.active && <span className="mt-1 inline-block rounded bg-[color-mix(in_srgb,var(--warn)_15%,transparent)] px-1.5 text-xs text-warn">รออนุมัติ / ระงับ</span>}
           </div>
           {t.id !== me && (
             <div className="flex flex-col gap-1">
-              <button className={`btn min-h-8 px-2 text-xs ${t.active ? "btn-ghost" : "btn-danger"}`} onClick={() => patch(t.id, { active: !t.active })}>
-                {t.active ? "ใช้งาน" : "ระงับ"}
+              <button className={`btn min-h-8 px-2 text-xs ${t.active ? "btn-danger" : "btn-primary"}`} onClick={() => patch(t.id, { active: !t.active })}>
+                {t.active ? "ระงับ" : "อนุมัติ"}
               </button>
               <button className="btn btn-ghost min-h-8 px-2 text-xs" onClick={() => patch(t.id, { role: t.role === "admin" ? "teacher" : "admin" })}>
                 {t.role === "admin" ? "ลดเป็นครู" : "ตั้งเป็นแอดมิน"}

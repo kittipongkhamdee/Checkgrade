@@ -33,12 +33,6 @@ function Editor({ name, me, isAdmin }: { name: string; me: string; isAdmin: bool
     setBusy(true);
     setMsg("");
     try {
-      // meta edits that change the unique key: update the row in place first
-      const { error } = await supabase().from("report_sets").update({
-        school_name: set.school_name, level: set.level, room: set.room, semester: set.semester,
-        academic_year: set.academic_year, homeroom_teacher: set.homeroom_teacher,
-      }).eq("id", id);
-      if (error) throw error;
       await saveSet(set, rows);
       logTeacher(`edit ${set.level}/${set.room} ภาค ${set.semester}`, name);
       setMsg("บันทึกแล้ว ✓");

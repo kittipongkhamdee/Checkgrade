@@ -12,7 +12,7 @@ export function Guard({ adminOnly, children }: { adminOnly?: boolean; children: 
     return (
       <main className="p-6 text-center">
         <div className="card space-y-3 p-6">
-          <p>{!profile?.active ? "บัญชีของคุณถูกระงับ กรุณาติดต่อผู้ดูแลระบบ" : "เฉพาะผู้ดูแลระบบเท่านั้น"}</p>
+          <p>{!profile?.active ? "บัญชีของคุณรอผู้ดูแลระบบอนุมัติ (หรือถูกระงับ) กรุณาติดต่อผู้ดูแลระบบ" : "เฉพาะผู้ดูแลระบบเท่านั้น"}</p>
           <button className="btn btn-ghost" onClick={() => supabase().auth.signOut()}>ออกจากระบบ</button>
         </div>
       </main>
