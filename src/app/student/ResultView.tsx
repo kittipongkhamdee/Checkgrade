@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Settings, StudentTerm } from "@/lib/types";
 import { gradeColor } from "@/lib/format";
-import { CountUp, Reveal, schoolConfetti } from "@/components/Motion";
+import { CountUp, Reveal, applause, schoolConfetti } from "@/components/Motion";
 
 const fmt = (v: unknown) => (v == null || v === "" ? "-" : String(v));
 
@@ -15,7 +15,7 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
   const gpaRef = useRef<HTMLDivElement>(null);
   // Spotlight only on the first reveal (not when switching semester tabs)
   const [spot, setSpot] = useState<"on" | "fading" | "done">(() =>
-    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "done" : "on");
+    !s.fx_spotlight || (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) ? "done" : "on");
   const [pos, setPos] = useState({ x: 0, y: 0 });
   useEffect(() => {
     if (spot !== "on") return;
@@ -35,7 +35,12 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
       setSpot("fading");
       setTimeout(() => setSpot("done"), 700);
     }
-    setTimeout(schoolConfetti, spot === "on" ? 350 : 0);
+    // Celebrate only at or above the admin's GPA threshold
+    if (Number(t.gpa) < Number(s.fx_min_gpa)) return;
+    setTimeout(() => {
+      if (s.fx_confetti) schoolConfetti();
+      if (s.fx_sound) applause();
+    }, spot === "on" ? 350 : 0);
   }
   const fullRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState<"" | "card" | "full">("");

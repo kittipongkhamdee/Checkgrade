@@ -71,7 +71,7 @@ export default function StudentApp({ settings: s }: { settings: Settings }) {
           <div className="truncate font-semibold">{s.system_name}</div>
           <div className="truncate text-sm text-muted">{s.school_name}</div>
         </div>
-        {step === "result" && <SoundToggle />}
+        {step === "result" && s.fx_sound && <SoundToggle />}
         {step === "result" ? (
           <button onClick={reset} className="btn btn-ghost min-h-9 px-3 text-sm">ออกจากระบบ</button>
         ) : (

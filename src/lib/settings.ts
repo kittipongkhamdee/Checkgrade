@@ -14,6 +14,10 @@ export const DEFAULT_SETTINGS: Settings = {
   close_at: null,
   theme: "red",
   primary_color: null,
+  fx_confetti: true,
+  fx_sound: true,
+  fx_spotlight: true,
+  fx_min_gpa: 0,
 };
 
 export async function getSettings(): Promise<Settings> {

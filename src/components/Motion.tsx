@@ -57,7 +57,6 @@ export function themeColors(vars = ["--primary", "--accent", "--mesh-1"]) {
 export const schoolConfetti = () => {
   const [p, a, m] = themeColors();
   confetti([p, p, a, "#ffffff", "#ffffff", m]);
-  applause();
 };
 
 /** One-shot confetti burst on a full-screen canvas. */

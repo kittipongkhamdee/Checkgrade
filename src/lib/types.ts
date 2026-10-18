@@ -13,6 +13,10 @@ export type Settings = {
   close_at: string | null;
   theme: Theme;
   primary_color: string | null;
+  fx_confetti: boolean;
+  fx_sound: boolean;
+  fx_spotlight: boolean;
+  fx_min_gpa: number;
 };
 
 export type Subject = { code: string; name: string; type: string; hours: number | null; credit: number };

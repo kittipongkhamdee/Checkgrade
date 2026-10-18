@@ -104,7 +104,8 @@ function SettingsTab({ name }: { name: string }) {
     const { error } = await supabase().from("settings").update({
       system_name: s!.system_name, school_name: s!.school_name, logo_url: s!.logo_url, semester: s!.semester,
       academic_year: s!.academic_year, open_semesters: s!.open_semesters, levels: s!.levels, rooms: s!.rooms, open_at: s!.open_at, close_at: s!.close_at,
-      theme: s!.theme, primary_color: s!.primary_color, updated_at: new Date().toISOString(),
+      theme: s!.theme, primary_color: s!.primary_color,
+      fx_confetti: s!.fx_confetti, fx_sound: s!.fx_sound, fx_spotlight: s!.fx_spotlight, fx_min_gpa: s!.fx_min_gpa, updated_at: new Date().toISOString(),
     }).eq("id", 1);
     await fetch("/api/revalidate", { method: "POST" });
     logTeacher("update settings", name, "admin");
@@ -196,6 +197,22 @@ function SettingsTab({ name }: { name: string }) {
             </label>
           </div>
           <p className="text-xs text-muted">{s.primary_color ? `ใช้สี ${s.primary_color.toUpperCase()} แทนสีหลักของธีม` : "ยังไม่ได้เลือก — ใช้สีตามธีม"}</p>
+        </div>
+      </section>
+
+      <section className="card space-y-3 p-4">
+        <h2 className="font-semibold">เอฟเฟกต์ตอนนักเรียนเปิดผล</h2>
+        <Toggle label="สปอตไลต์ส่อง GPA" hint="หน้าจอมืด ไฟส่องวูบวาบขณะตัวเลขวิ่ง" on={s.fx_spotlight} set={(v) => setS({ ...s, fx_spotlight: v })} />
+        <Toggle label="พลุกระดาษ" hint="สีประจำโรงเรียน" on={s.fx_confetti} set={(v) => setS({ ...s, fx_confetti: v })} />
+        <Toggle label="เสียงปรบมือ" hint="นักเรียนปิดเสียงเองได้ด้วยปุ่ม 🔊" on={s.fx_sound} set={(v) => setS({ ...s, fx_sound: v })} />
+        <div className={s.fx_confetti || s.fx_sound ? "" : "opacity-40"}>
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium">GPA ขั้นต่ำที่จะมีพลุและเสียง</span>
+            <b className="tabular-nums" style={{ color: "var(--primary)" }}>{Number(s.fx_min_gpa) === 0 ? "ทุกคน" : `${Number(s.fx_min_gpa).toFixed(2)} ขึ้นไป`}</b>
+          </div>
+          <input type="range" min={0} max={4} step={0.25} value={Number(s.fx_min_gpa)} disabled={!s.fx_confetti && !s.fx_sound}
+            onChange={(e) => setS({ ...s, fx_min_gpa: Number(e.target.value) })} className="mt-2 w-full accent-[var(--primary)]" />
+          <div className="flex justify-between text-xs text-muted"><span>0 (ทุกคน)</span><span>2.00</span><span>4.00</span></div>
         </div>
       </section>
 
@@ -466,5 +483,19 @@ function ResultsTab() {
         </section>
       ))}
     </div>
+  );
+}
+
+function Toggle({ label, hint, on, set }: { label: string; hint?: string; on: boolean; set: (v: boolean) => void }) {
+  return (
+    <button type="button" role="switch" aria-checked={on} onClick={() => set(!on)} className="flex w-full items-center gap-3 text-left">
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-medium">{label}</div>
+        {hint && <div className="text-xs text-muted">{hint}</div>}
+      </div>
+      <span className="relative h-7 w-12 shrink-0 rounded-full transition-colors" style={{ background: on ? "var(--primary)" : "#d4d4d8" }}>
+        <span className={`absolute top-0.5 size-6 rounded-full bg-white shadow transition-all ${on ? "left-[22px]" : "left-0.5"}`} />
+      </span>
+    </button>
   );
 }
