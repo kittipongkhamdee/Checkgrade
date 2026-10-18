@@ -11,10 +11,10 @@ import { logTeacher } from "@/lib/useAuth";
 import type { ReportSet, StudentRow } from "@/lib/types";
 
 export default function SetPage() {
-  return <Guard>{(p) => <Editor name={p.full_name} />}</Guard>;
+  return <Guard>{(p) => <Editor name={p.full_name} me={p.id} isAdmin={p.role === "admin"} />}</Guard>;
 }
 
-function Editor({ name }: { name: string }) {
+function Editor({ name, me, isAdmin }: { name: string; me: string; isAdmin: boolean }) {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [set, setSet] = useState<ReportSet | null>(null);
@@ -53,13 +53,14 @@ function Editor({ name }: { name: string }) {
     if (!set || !confirm(`ลบข้อมูล ${set.level}/${set.room} ภาคเรียนที่ ${set.semester} ทั้งหมด?`)) return;
     await supabase().from("report_sets").delete().eq("id", id);
     logTeacher(`delete ${set.level}/${set.room} ภาค ${set.semester}`, name);
-    router.push("/teacher");
+    router.push(back);
   }
 
+  const back = isAdmin && set?.teacher_id !== me ? "/admin" : "/teacher";
   if (!set) return <div className="space-y-3 p-5"><div className="skeleton h-12" /><div className="skeleton h-64" /></div>;
   return (
     <main className="pb-24">
-      <TopBar title={`${set.level}/${set.room} · ภาค ${set.semester}`} back="/teacher"
+      <TopBar title={`${set.level}/${set.room} · ภาค ${set.semester}`} back={back}
         right={<button className="btn btn-danger min-h-9 px-3 text-sm" onClick={remove}>ลบชุดนี้</button>} />
       <div className="space-y-4 p-4">
         <SetMetaForm set={set} onChange={setSet} />

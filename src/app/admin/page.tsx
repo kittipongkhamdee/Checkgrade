@@ -10,23 +10,24 @@ import { logTeacher, type Profile } from "@/lib/useAuth";
 import type { Settings, Theme } from "@/lib/types";
 import { shrinkImage } from "@/lib/image";
 
-const TABS = ["ตั้งค่า", "ครู", "ประวัติ", "แชร์ลิงก์"] as const;
+const TABS = ["ผลการเรียน", "ตั้งค่า", "ครู", "ประวัติ", "แชร์ลิงก์"] as const;
 
 export default function AdminPage() {
   return <Guard adminOnly>{(p) => <Admin p={p} />}</Guard>;
 }
 
 function Admin({ p }: { p: Profile }) {
-  const [tab, setTab] = useState<(typeof TABS)[number]>("ตั้งค่า");
+  const [tab, setTab] = useState<(typeof TABS)[number]>("ผลการเรียน");
   return (
     <main className="pb-10">
       <TopBar title="ผู้ดูแลระบบ" right={<Link href="/teacher" className="btn btn-ghost min-h-9 px-3 text-sm">หน้าครู</Link>} />
-      <div className="sticky top-[57px] z-10 grid grid-cols-4 gap-1 bg-[var(--surface)] p-2">
+      <div className="sticky top-[57px] z-10 flex gap-1 overflow-x-auto bg-[var(--surface)] p-2">
         {TABS.map((t) => (
-          <button key={t} onClick={() => setTab(t)} className={`rounded-xl py-2 text-sm font-medium ${t === tab ? "bg-primary text-primary-fg" : "text-muted"}`}>{t}</button>
+          <button key={t} onClick={() => setTab(t)} className={`shrink-0 rounded-xl px-3 py-2 text-sm font-medium ${t === tab ? "bg-primary text-primary-fg" : "text-muted"}`}>{t}</button>
         ))}
       </div>
       <div className="p-4">
+        {tab === "ผลการเรียน" && <ResultsTab />}
         {tab === "ตั้งค่า" && <SettingsTab name={p.full_name} />}
         {tab === "ครู" && <TeachersTab me={p.id} />}
         {tab === "ประวัติ" && <LogsTab />}
@@ -291,6 +292,78 @@ function ShareTab() {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+type AdminSet = {
+  id: string; level: string; room: string; semester: number; academic_year: number; created_at: string;
+  profiles: { full_name: string; email: string } | null;
+  student_results: { gpa: number | null }[];
+};
+
+/** Every teacher's uploads, grouped by class (level/room). */
+function ResultsTab() {
+  const [sets, setSets] = useState<AdminSet[] | null>(null);
+  const [year, setYear] = useState<number | "all">("all");
+
+  const load = () =>
+    supabase()
+      .from("report_sets")
+      .select("id, level, room, semester, academic_year, created_at, profiles(full_name, email), student_results(gpa)")
+      .order("academic_year", { ascending: false })
+      .then(({ data }) => setSets((data as unknown as AdminSet[]) ?? []));
+  useEffect(() => { load(); }, []);
+
+  async function remove(x: AdminSet) {
+    if (!confirm(`ลบ ${x.level}/${x.room} ภาคเรียนที่ ${x.semester}/${x.academic_year} ของ ${x.profiles?.full_name || "ครู"}?`)) return;
+    await supabase().from("report_sets").delete().eq("id", x.id);
+    logTeacher(`delete ${x.level}/${x.room} ภาค ${x.semester}`, "admin", "admin");
+    load();
+  }
+
+  if (!sets) return <div className="skeleton h-40" />;
+  const years = [...new Set(sets.map((x) => x.academic_year))];
+  const shown = sets.filter((x) => year === "all" || x.academic_year === year);
+  const groups = new Map<string, AdminSet[]>();
+  for (const x of shown) {
+    const k = `${x.level}/${x.room}`;
+    groups.set(k, [...(groups.get(k) ?? []), x]);
+  }
+  const keys = [...groups.keys()].sort((a, b) => a.localeCompare(b, "th", { numeric: true }));
+  const total = shown.reduce((a, x) => a + x.student_results.length, 0);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <select className="input flex-1" value={year} onChange={(e) => setYear(e.target.value === "all" ? "all" : Number(e.target.value))}>
+          <option value="all">ทุกปีการศึกษา</option>
+          {years.map((y) => <option key={y} value={y}>ปีการศึกษา {y}</option>)}
+        </select>
+        <div className="shrink-0 text-right text-sm text-muted">{keys.length} ชั้นเรียน<br />{total} รายการ</div>
+      </div>
+      {keys.length === 0 && <div className="card p-6 text-center text-muted">ยังไม่มีครูอัปโหลดข้อมูล</div>}
+      {keys.map((k) => (
+        <section key={k} className="space-y-2">
+          <h3 className="px-1 font-semibold">{k}</h3>
+          {groups.get(k)!.sort((a, b) => b.academic_year - a.academic_year || a.semester - b.semester).map((x) => {
+            const g = x.student_results.map((r) => Number(r.gpa)).filter((v) => v > 0);
+            return (
+              <div key={x.id} className="card flex items-center gap-3 p-3">
+                <Link href={`/teacher/set/${x.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+                  <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-surface-2 text-sm font-bold">ภ.{x.semester}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-medium">ภาคเรียนที่ {x.semester}/{x.academic_year} · {x.student_results.length} คน</div>
+                    <div className="truncate text-xs text-muted">โดย {x.profiles?.full_name || x.profiles?.email || "-"} · GPA เฉลี่ย {g.length ? (g.reduce((a, b) => a + b, 0) / g.length).toFixed(2) : "-"}</div>
+                  </div>
+                </Link>
+                <Link href={`/teacher/set/${x.id}`} className="btn btn-ghost min-h-9 px-3 text-sm">แก้ไข</Link>
+                <button className="btn btn-danger min-h-9 px-3 text-sm" onClick={() => remove(x)}>ลบ</button>
+              </div>
+            );
+          })}
+        </section>
+      ))}
     </div>
   );
 }

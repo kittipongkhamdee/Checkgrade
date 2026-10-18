@@ -10,31 +10,34 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
   const [idx, setIdx] = useState(() => Math.max(0, sorted.findIndex((t) => t.semester === s.semester)));
   const t = sorted[idx] ?? sorted[0];
   const cardRef = useRef<HTMLDivElement>(null);
-  const [busy, setBusy] = useState(false);
+  const fullRef = useRef<HTMLDivElement>(null);
+  const [busy, setBusy] = useState<"" | "card" | "full">("");
+  const [shot, setShot] = useState<{ url: string; file: File } | null>(null);
 
   const credits = t.subjects.reduce((a, x) => a + (x.credit || 0), 0);
   const gradeOf = (code: string) => t.scores.find((x) => x.code === code);
 
-  async function share() {
-    if (!cardRef.current) return;
-    setBusy(true);
+  /** Render a node to PNG and open the save sheet. */
+  async function capture(kind: "card" | "full") {
+    const node = kind === "card" ? cardRef.current : fullRef.current;
+    if (!node) return;
+    setBusy(kind);
     try {
-      const { toPng } = await import("html-to-image");
-      const url = await toPng(cardRef.current, { pixelRatio: 3, cacheBust: true });
-      const blob = await (await fetch(url)).blob();
-      const file = new File([blob], `ผลการเรียน-${t.student_code}.png`, { type: "image/png" });
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: s.system_name });
-      } else {
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = file.name;
-        a.click();
-      }
+      const { toBlob } = await import("html-to-image");
+      const bg = getComputedStyle(document.body).backgroundColor;
+      const blob = await toBlob(node, {
+        pixelRatio: 2.5,
+        backgroundColor: bg && bg !== "rgba(0, 0, 0, 0)" ? bg : "#ffffff",
+        style: kind === "full" ? { padding: "16px" } : undefined,
+        filter: (n) => !(n instanceof HTMLElement && n.dataset.noCapture != null),
+      });
+      if (!blob) throw new Error("capture failed");
+      const name = `ผลการเรียน-${t.student_code}-ภาค${t.semester}${kind === "full" ? "-ทั้งหมด" : ""}.png`;
+      setShot({ url: URL.createObjectURL(blob), file: new File([blob], name, { type: "image/png" }) });
     } catch {
-      /* user cancelled */
+      alert("สร้างรูปไม่สำเร็จ กรุณาลองใหม่");
     } finally {
-      setBusy(false);
+      setBusy("");
     }
   }
 
@@ -51,6 +54,7 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
         </div>
       )}
 
+      <div ref={fullRef} className="space-y-4">
       {/* Shareable card */}
       <div ref={cardRef} className="hero overflow-hidden rounded-[var(--radius)] p-6">
         <div className="text-sm opacity-80">{s.school_name}</div>
@@ -73,9 +77,14 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
         </div>
       </div>
 
-      <button onClick={share} disabled={busy} className="btn btn-primary w-full">
-        {busy ? "กำลังสร้างภาพ…" : "📤 บันทึก / แชร์การ์ดผลการเรียน"}
-      </button>
+      <div data-no-capture className="grid grid-cols-2 gap-2">
+        <button onClick={() => capture("card")} disabled={!!busy} className="btn btn-primary">
+          {busy === "card" ? "กำลังสร้าง…" : "🖼️ บันทึกการ์ด"}
+        </button>
+        <button onClick={() => capture("full")} disabled={!!busy} className="btn btn-ghost">
+          {busy === "full" ? "กำลังสร้าง…" : "📄 บันทึกทั้งหน้า"}
+        </button>
+      </div>
 
       <div className="card divide-y divide-[var(--border)]">
         <div className="flex px-4 py-3 text-xs text-muted">
@@ -108,6 +117,46 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
             <div>{t.comment}</div>
           </div>
         )}
+      </div>
+      <div className="pt-1 text-center text-xs text-muted">{s.system_name} · {s.school_name}</div>
+      </div>
+
+      {shot && <SaveSheet shot={shot} onClose={() => { URL.revokeObjectURL(shot.url); setShot(null); }} />}
+    </div>
+  );
+}
+
+/** Preview + save/share. Long-press on the image saves to Photos on iOS/Android too. */
+function SaveSheet({ shot, onClose }: { shot: { url: string; file: File }; onClose: () => void }) {
+  const canShare = typeof navigator !== "undefined" && !!navigator.canShare?.({ files: [shot.file] });
+  function download() {
+    const a = document.createElement("a");
+    a.href = shot.url;
+    a.download = shot.file.name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+  async function share() {
+    try { await navigator.share({ files: [shot.file] }); } catch { /* cancelled */ }
+  }
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-black/80 p-4" onClick={onClose}>
+      <div className="flex-1 overflow-auto" onClick={(e) => e.stopPropagation()}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={shot.url} alt="ผลการเรียน" className="mx-auto max-w-full rounded-xl" />
+      </div>
+      <div className="mx-auto w-full max-w-md space-y-2 pt-3" onClick={(e) => e.stopPropagation()}>
+        <p className="text-center text-xs text-white/80">หรือกดค้างที่รูป แล้วเลือก “บันทึกรูปภาพ” เพื่อเก็บลงแกลเลอรี</p>
+        <div className="grid grid-cols-2 gap-2">
+          {canShare ? (
+            <button className="btn btn-primary" onClick={share}>📥 บันทึก / แชร์</button>
+          ) : (
+            <button className="btn btn-primary" onClick={download}>📥 ดาวน์โหลด</button>
+          )}
+          <button className="btn bg-white text-black" onClick={onClose}>ปิด</button>
+        </div>
+        {canShare && <button className="w-full text-center text-sm text-white/80 underline" onClick={download}>ดาวน์โหลดเป็นไฟล์</button>}
       </div>
     </div>
   );
