@@ -8,6 +8,7 @@ import { SetMetaForm } from "@/components/SetMetaForm";
 import { supabase } from "@/lib/supabase";
 import { saveSet } from "@/lib/saveSet";
 import { logTeacher } from "@/lib/useAuth";
+import { confirmDialog } from "@/components/Dialog";
 import type { ReportSet, StudentRow } from "@/lib/types";
 
 export default function SetPage() {
@@ -44,7 +45,11 @@ function Editor({ name, me, isAdmin }: { name: string; me: string; isAdmin: bool
   }
 
   async function remove() {
-    if (!set || !confirm(`ลบข้อมูล ${set.level}/${set.room} ภาคเรียนที่ ${set.semester} ทั้งหมด?`)) return;
+    if (!set || !(await confirmDialog({
+      title: "ลบผลการเรียนชุดนี้?",
+      message: <>{set.level}/{set.room} ภาคเรียนที่ {set.semester}/{set.academic_year} · {rows.length} คน<br /><b className="text-bad">ลบแล้วกู้คืนไม่ได้</b></>,
+      confirmText: "ลบ", danger: true,
+    }))) return;
     await supabase().from("report_sets").delete().eq("id", id);
     logTeacher(`delete ${set.level}/${set.room} ภาค ${set.semester}`, name);
     router.push(back);

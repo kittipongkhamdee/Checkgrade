@@ -2,6 +2,7 @@
 import { useState } from "react";
 import type { StudentRow, Subject } from "@/lib/types";
 import { gradeColor } from "@/lib/format";
+import { confirmDialog } from "./Dialog";
 
 const parse = (v: string): string | number | null => {
   const s = v.trim();
@@ -92,7 +93,9 @@ export function StudentTable({ subjects, rows, onChange }: { subjects: Subject[]
                   <label className="label">ความเห็นของครูที่ปรึกษา</label>
                   <textarea className="input min-h-20 py-2" value={show(r.comment)} onChange={(e) => update(i, { comment: e.target.value || null })} />
                 </div>
-                <button className="btn btn-danger w-full" onClick={() => { if (confirm(`ลบ ${r.full_name || "นักเรียนคนนี้"}?`)) { onChange(rows.filter((_, j) => j !== i)); setOpen(null); } }}>
+                <button className="btn btn-danger w-full" onClick={async () => {
+                  if (await confirmDialog({ title: "ลบนักเรียนคนนี้?", message: `${r.full_name || "(ไม่มีชื่อ)"} จะถูกลบเมื่อกดบันทึก`, confirmText: "ลบ", danger: true })) { onChange(rows.filter((_, j) => j !== i)); setOpen(null); }
+                }}>
                   ลบนักเรียนคนนี้
                 </button>
               </div>

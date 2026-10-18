@@ -9,6 +9,7 @@ import type { ParsedTerm } from "@/lib/excel";
 import { saveSet } from "@/lib/saveSet";
 import { logTeacher } from "@/lib/useAuth";
 import { supabase } from "@/lib/supabase";
+import { ProgressRing } from "@/components/Dialog";
 
 export default function UploadPage() {
   return <Guard>{(p) => <Upload name={p.full_name} />}</Guard>;
@@ -21,6 +22,7 @@ function Upload({ name }: { name: string }) {
   const [fileName, setFileName] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<{ value: number; label: string; sub?: string } | null>(null);
   const [active, setActive] = useState<{ semester: number; academic_year: number } | null>(null);
 
   useEffect(() => {
@@ -34,13 +36,21 @@ function Upload({ name }: { name: string }) {
     setErr("");
     setTerm(null);
     try {
+      setProgress({ value: 0, label: "กำลังอ่านไฟล์", sub: file.name });
+      const buf = await readWithProgress(file, (p) => setProgress({ value: p * 60, label: "กำลังอ่านไฟล์", sub: file.name }));
+      setProgress({ value: 70, label: "กำลังวิเคราะห์ชีต" });
       const { parseWorkbook } = await import("@/lib/excel");
-      const found = parseWorkbook(await file.arrayBuffer()).filter((t) => t.students.length);
+      await new Promise((r) => setTimeout(r, 50)); // let the ring paint before the blocking parse
+      const found = parseWorkbook(buf).filter((t) => t.students.length);
+      setProgress({ value: 100, label: "อ่านไฟล์เสร็จแล้ว" });
+      await new Promise((r) => setTimeout(r, 400));
       if (!found.length) return setErr("ไม่พบชีตที่มีหัวตาราง 'เลขประจำตัว' และรายชื่อนักเรียน");
       setFileName(file.name);
       setSheets(found);
     } catch {
       setErr("อ่านไฟล์ไม่สำเร็จ กรุณาใช้ไฟล์ .xlsx ตามแบบฟอร์ม");
+    } finally {
+      setProgress(null);
     }
   }
 
@@ -54,11 +64,21 @@ function Upload({ name }: { name: string }) {
     if (!term) return;
     setBusy(true);
     setErr("");
+    // The save is one database call, so ease toward 90% while it runs, then finish.
+    let v = 0;
+    const sub = `${term.set.level}/${term.set.room} · ${term.students.length} คน`;
+    setProgress({ value: 0, label: "กำลังบันทึกผลการเรียน", sub });
+    const timer = setInterval(() => { v += (90 - v) * 0.12; setProgress({ value: v, label: "กำลังบันทึกผลการเรียน", sub }); }, 120);
     try {
       await saveSet(term.set, term.students);
+      clearInterval(timer);
+      setProgress({ value: 100, label: "บันทึกสำเร็จ ✓", sub });
+      await new Promise((r) => setTimeout(r, 700));
       logTeacher(`upload ${term.set.level}/${term.set.room} ภาค ${term.set.semester} (ชีต ${term.sheet})`, name);
       router.push("/teacher");
     } catch (e) {
+      clearInterval(timer);
+      setProgress(null);
       setErr("บันทึกไม่สำเร็จ: " + (e as Error).message);
       setBusy(false);
     }
@@ -66,6 +86,7 @@ function Upload({ name }: { name: string }) {
 
   return (
     <main className="pb-24">
+      {progress && <ProgressRing {...progress} />}
       <TopBar title="อัปโหลดผลการเรียน" back="/teacher" />
       <div className="space-y-4 p-4">
         <label className="card flex cursor-pointer flex-col items-center gap-2 border-dashed p-6 text-center">
@@ -131,4 +152,15 @@ function Upload({ name }: { name: string }) {
       )}
     </main>
   );
+}
+
+/** Read a File with progress callbacks (0..1). */
+function readWithProgress(file: File, onProgress: (p: number) => void): Promise<ArrayBuffer> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onprogress = (e) => e.lengthComputable && onProgress(e.loaded / e.total);
+    r.onload = () => { onProgress(1); resolve(r.result as ArrayBuffer); };
+    r.onerror = () => reject(r.error);
+    r.readAsArrayBuffer(file);
+  });
 }

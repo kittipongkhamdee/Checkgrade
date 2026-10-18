@@ -10,6 +10,7 @@ import { logTeacher, type Profile } from "@/lib/useAuth";
 import type { Settings, Theme } from "@/lib/types";
 import { shrinkImage } from "@/lib/image";
 import { customColorVars } from "@/lib/theme";
+import { confirmDialog } from "@/components/Dialog";
 import { CapIcon, UserIcon } from "@/components/Icons";
 
 const TABS = ["ผลการเรียน", "ตั้งค่า", "ครู", "ประวัติ"] as const;
@@ -412,7 +413,11 @@ function ResultsTab() {
   useEffect(() => { load(); }, []);
 
   async function remove(x: AdminSet) {
-    if (!confirm(`ลบ ${x.level}/${x.room} ภาคเรียนที่ ${x.semester}/${x.academic_year} ของ ${x.profiles?.full_name || "ครู"}?`)) return;
+    if (!(await confirmDialog({
+      title: "ลบผลการเรียนชุดนี้?",
+      message: <>{x.level}/{x.room} ภาคเรียนที่ {x.semester}/{x.academic_year}<br />ของ {x.profiles?.full_name || "ครู"} · {x.student_results.length} คน<br /><b className="text-bad">ลบแล้วกู้คืนไม่ได้</b></>,
+      confirmText: "ลบ", danger: true,
+    }))) return;
     await supabase().from("report_sets").delete().eq("id", x.id);
     logTeacher(`delete ${x.level}/${x.room} ภาค ${x.semester}`, "admin", "admin");
     load();
