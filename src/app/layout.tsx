@@ -12,12 +12,13 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: s.system_name, description: `${s.system_name} ${s.school_name}`, icons: s.logo_url ? [s.logo_url] : undefined };
 }
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#1e3a8a" };
+// Always light: opt out of OS dark mode and browser "force dark" (Chrome/Samsung Internet).
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#1e3a8a", colorScheme: "only light" };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const s = await getSettings();
   return (
-    <html lang="th" data-theme={s.theme} className={thai.variable}>
+    <html lang="th" data-theme={s.theme} className={thai.variable} style={{ colorScheme: "only light" }}>
       <body className="antialiased">
         <div className="mx-auto min-h-dvh w-full max-w-md md:max-w-3xl lg:max-w-5xl">{children}</div>
       </body>

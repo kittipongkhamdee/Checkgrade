@@ -100,7 +100,8 @@
   --font-sans: var(--font-thai), ui-sans-serif, system-ui, sans-serif;
 }
 
-html, body { min-height: 100%; }
+html, body { min-height: 100%; color-scheme: only light; }
+:root { color-scheme: only light; }
 body {
   background: var(--bg);
   background-attachment: fixed;
