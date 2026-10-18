@@ -105,7 +105,7 @@ function Upload({ name }: { name: string }) {
               <h2 className="font-semibold">เลือกชีตที่มีผลการเรียน ภาคเรียนที่ {active?.semester}</h2>
               <p className="text-sm text-muted">ระบบพบ {sheets.length} ชีต ตรวจดูรายชื่อและรายวิชาก่อนเลือก</p>
             </div>
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {sheets.map((t) => (
                 <button key={t.sheet} onClick={() => choose(t)} className="card space-y-2 p-4 text-left transition active:scale-[.99]">
                   <div className="flex items-center justify-between gap-2">

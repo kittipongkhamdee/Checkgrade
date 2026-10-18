@@ -234,10 +234,10 @@ function TeachersTab({ me }: { me: string }) {
 
   if (!list) return <div className="skeleton h-40" />;
   return (
-    <div className="grid gap-2 md:grid-cols-2">
+    <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
       <p className="text-sm text-muted md:col-span-2">ครูทั้งหมด {list.length} คน · รออนุมัติ {list.filter((t) => !t.active).length} คน</p>
       {list.map((t) => (
-        <div key={t.id} className="card flex items-center gap-3 p-3">
+        <div key={t.id} className="card flex min-w-0 items-center gap-3 p-3">
           <div className="grid size-10 shrink-0 place-items-center rounded-[14px] text-white" style={{ background: t.role === "admin" ? "var(--icon-b)" : "var(--icon-a)" }}><UserIcon size={20} /></div>
           <div className="min-w-0 flex-1">
             <div className="truncate font-medium">{t.full_name || "-"}</div>
@@ -462,12 +462,12 @@ function ResultsTab() {
       </div>
       {keys.length === 0 && <div className="card p-6 text-center text-muted">ยังไม่มีครูอัปโหลดข้อมูล</div>}
       {keys.map((k) => (
-        <section key={k} className="grid gap-2 md:grid-cols-2">
+        <section key={k} className="grid min-w-0 grid-cols-1 gap-2 md:grid-cols-2">
           <h3 className="px-1 font-semibold md:col-span-2">{k}</h3>
           {groups.get(k)!.sort((a, b) => b.academic_year - a.academic_year || a.semester - b.semester).map((x) => {
             const g = x.student_results.map((r) => Number(r.gpa)).filter((v) => v > 0);
             return (
-              <div key={x.id} className="card flex items-center gap-3 p-3">
+              <div key={x.id} className="card flex min-w-0 items-center gap-2 p-3">
                 <Link href={`/teacher/set/${x.id}`} className="flex min-w-0 flex-1 items-center gap-3">
                   <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-surface-2 text-sm font-bold">ภ.{x.semester}</div>
                   <div className="min-w-0 flex-1">
@@ -475,8 +475,12 @@ function ResultsTab() {
                     <div className="truncate text-xs text-muted">โดย {x.profiles?.full_name || x.profiles?.email || "-"} · GPA เฉลี่ย {g.length ? (g.reduce((a, b) => a + b, 0) / g.length).toFixed(2) : "-"}</div>
                   </div>
                 </Link>
-                <Link href={`/teacher/set/${x.id}`} className="btn btn-ghost min-h-9 px-3 text-sm">แก้ไข</Link>
-                <button className="btn btn-danger min-h-9 px-3 text-sm" onClick={() => remove(x)}>ลบ</button>
+                <Link href={`/teacher/set/${x.id}`} aria-label="แก้ไข" className="btn btn-ghost size-10 min-h-0 shrink-0 p-0">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+                </Link>
+                <button aria-label="ลบ" className="btn btn-danger size-10 min-h-0 shrink-0 p-0" onClick={() => remove(x)}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3" /></svg>
+                </button>
               </div>
             );
           })}

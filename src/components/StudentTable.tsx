@@ -32,7 +32,7 @@ export function StudentTable({ subjects, rows, onChange }: { subjects: Subject[]
   };
 
   return (
-    <div className="grid gap-2 md:grid-cols-2 md:items-start">
+    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:items-start">
       <p className="text-xs text-muted md:col-span-2">แตะที่ชื่อนักเรียนเพื่อดู/แก้ไขคะแนนทุกวิชา · {subjects.length} วิชา</p>
       {rows.map((r, i) => {
         const missing = r.scores.filter((s) => s.grade == null).length;

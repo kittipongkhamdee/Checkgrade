@@ -54,7 +54,7 @@ function Dashboard({ p }: { p: Profile }) {
         }
       />
       <div className="space-y-4 p-4">
-        <div className="grid gap-4 md:grid-cols-2 md:items-start"><div className="grid grid-cols-3 gap-3 md:self-stretch md:[&>*]:grid md:[&>*]:content-center">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start"><div className="grid grid-cols-3 gap-3 md:self-stretch md:[&>*]:grid md:[&>*]:content-center">
           <Kpi label="นักเรียน" v={stats.students} />
           <Kpi label="GPA เฉลี่ย" v={stats.avg ? stats.avg.toFixed(2) : "-"} />
           <Kpi label="0 / ร / มส" v={stats.incomplete} tone="var(--bad)" />
@@ -82,7 +82,7 @@ function Dashboard({ p }: { p: Profile }) {
         <div className="flex items-center justify-between">
           <h2 className="font-semibold">ชุดข้อมูลของฉัน</h2>
         </div>
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {sets == null ? <div className="skeleton h-20" /> : sets.length === 0 ? (
           <div className="card p-6 text-center text-muted md:col-span-2">ยังไม่มีข้อมูล เริ่มจากอัปโหลดไฟล์ Excel</div>
         ) : (
