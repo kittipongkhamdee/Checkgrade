@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Settings, StudentTerm } from "@/lib/types";
 import { gradeColor } from "@/lib/format";
 import { CountUp, Reveal, schoolConfetti } from "@/components/Motion";
@@ -12,6 +12,31 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
   const t = sorted[idx] ?? sorted[0];
   const cardRef = useRef<HTMLDivElement>(null);
   const certRef = useRef<HTMLDivElement>(null);
+  const gpaRef = useRef<HTMLDivElement>(null);
+  // Spotlight only on the first reveal (not when switching semester tabs)
+  const [spot, setSpot] = useState<"on" | "fading" | "done">(() =>
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "done" : "on");
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  useEffect(() => {
+    if (spot !== "on") return;
+    if (t.gpa == null) { setSpot("done"); return; } // nothing to count up
+    const place = () => {
+      const r = gpaRef.current?.getBoundingClientRect();
+      if (r) setPos({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    };
+    place();
+    const id = setInterval(place, 100); // follows the card's entrance animation
+    document.body.style.overflow = "hidden";
+    return () => { clearInterval(id); document.body.style.overflow = ""; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spot]);
+  function finishCount() {
+    if (spot === "on") {
+      setSpot("fading");
+      setTimeout(() => setSpot("done"), 700);
+    }
+    setTimeout(schoolConfetti, spot === "on" ? 350 : 0);
+  }
   const fullRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState<"" | "card" | "full">("");
   const [shot, setShot] = useState<{ url: string; file: File } | null>(null);
@@ -71,7 +96,7 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
         <div className="mt-5 flex items-end justify-between">
           <div>
             <div className="text-xs uppercase tracking-wider opacity-70">เกรดเฉลี่ย (GPA)</div>
-            <div className="text-6xl font-bold tabular-nums leading-none">{t.gpa != null ? <CountUp value={Number(t.gpa)} decimals={2} delay={500} onDone={() => Number(t.gpa) >= 2.5 && schoolConfetti()} /> : "-"}</div>
+            <div ref={gpaRef} className="inline-block text-6xl font-bold tabular-nums leading-none">{t.gpa != null ? <CountUp value={Number(t.gpa)} decimals={2} delay={spot === "on" ? 1400 : 500} duration={spot === "on" ? 3600 : 2600} onDone={finishCount} /> : "-"}</div>
           </div>
           <div className="text-right text-sm">
             <div>ลำดับที่ <b className="text-lg">{t.rank != null ? <CountUp value={Number(t.rank)} delay={500} /> : "-"}</b></div>
@@ -134,6 +159,10 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
         </button>
       </div>
 
+      {spot !== "done" && (
+        <div aria-hidden className={`spotlight ${spot === "fading" ? "off" : ""}`}
+          style={{ "--x": `${pos.x}px`, "--y": `${pos.y}px` } as React.CSSProperties} />
+      )}
       <CertCard ref={certRef} t={t} s={s} credits={credits} />
       {shot && <SaveSheet shot={shot} onClose={() => { URL.revokeObjectURL(shot.url); setShot(null); }} />}
     </div>

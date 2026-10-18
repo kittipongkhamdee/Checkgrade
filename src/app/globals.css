@@ -176,6 +176,23 @@ body {
   .rise { animation: rise .7s cubic-bezier(.2,.8,.2,1) both; }
   @keyframes rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { .reveal, .pop, .unveil, .rise, .float-a, .float-b, .shine::after { animation: none !important; transition: none !important; opacity: 1; transform: none; } }
+  /* Stage spotlight on the GPA while it counts up */
+  .spotlight {
+    position: fixed; inset: 0; z-index: 55; pointer-events: none;
+    background: radial-gradient(circle var(--r) at var(--x) var(--y), rgb(255 250 230 / .10) 0%, rgb(255 250 230 / .04) 55%, rgb(0 0 0 / .9) 100%);
+    animation: spotFlicker 1.1s steps(1, end) infinite, spotPulse 2.4s ease-in-out infinite;
+    transition: opacity .7s ease;
+  }
+  .spotlight::before { /* light beam from above */
+    content: ""; position: absolute; left: calc(var(--x) - var(--r)); top: 0; width: calc(var(--r) * 2); height: var(--y);
+    background: linear-gradient(to bottom, rgb(255 248 220 / 0), rgb(255 248 220 / .14));
+    clip-path: polygon(42% 0, 58% 0, 100% 100%, 0 100%);
+    filter: blur(6px);
+  }
+  .spotlight.off { opacity: 0; animation: none; }
+  @property --r { syntax: "<length>"; inherits: true; initial-value: 130px; }
+  @keyframes spotPulse { 0%, 100% { --r: 120px; } 50% { --r: 150px; } }
+  @keyframes spotFlicker { 0% { opacity: 1; } 8% { opacity: .55; } 11% { opacity: 1; } 47% { opacity: .8; } 50% { opacity: 1; } 71% { opacity: .5; } 74% { opacity: 1; } }
   .skeleton { background: var(--surface-2); border-radius: 8px; animation: pulse 1.4s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity: .5; } }
 }
