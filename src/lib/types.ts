@@ -17,6 +17,7 @@ export type Settings = {
   fx_sound: boolean;
   fx_spotlight: boolean;
   fx_min_gpa: number;
+  applause_url: string | null;
 };
 
 export type Subject = { code: string; name: string; type: string; hours: number | null; credit: number };

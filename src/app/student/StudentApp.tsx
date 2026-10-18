@@ -7,7 +7,7 @@ import { Countdown } from "@/components/Countdown";
 import { Logo } from "@/components/Brand";
 import ResultView from "./ResultView";
 import { UserIcon } from "@/components/Icons";
-import { isMuted, setMuted, unlockAudio } from "@/components/Motion";
+import { isMuted, loadApplause, setMuted, unlockAudio } from "@/components/Motion";
 
 type Step = "input" | "confirm" | "opening" | "result";
 const IDLE_MS = 3 * 60 * 1000;
@@ -55,6 +55,7 @@ export default function StudentApp({ settings: s }: { settings: Settings }) {
 
   function confirm() {
     unlockAudio();
+    if (s.fx_sound) loadApplause(s.applause_url); // fetched during the drum-roll
     // short drum-roll before revealing results
     setStep("opening");
     setTimeout(() => setStep((st) => (st === "opening" ? "result" : st)), 1400);
@@ -71,7 +72,7 @@ export default function StudentApp({ settings: s }: { settings: Settings }) {
           <div className="truncate font-semibold">{s.system_name}</div>
           <div className="truncate text-sm text-muted">{s.school_name}</div>
         </div>
-        {step === "result" && s.fx_sound && <SoundToggle />}
+        {step === "result" && s.fx_sound && s.applause_url && <SoundToggle />}
         {step === "result" ? (
           <button onClick={reset} className="btn btn-ghost min-h-9 px-3 text-sm">ออกจากระบบ</button>
         ) : (

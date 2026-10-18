@@ -18,6 +18,7 @@ export const DEFAULT_SETTINGS: Settings = {
   fx_sound: true,
   fx_spotlight: true,
   fx_min_gpa: 0,
+  applause_url: null,
 };
 
 export async function getSettings(): Promise<Settings> {

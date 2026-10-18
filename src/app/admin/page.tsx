@@ -86,6 +86,20 @@ function SettingsTab({ name }: { name: string }) {
     }
   }
 
+  async function uploadSound(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !s) return;
+    if (file.size > 2 * 1024 * 1024) return setMsg("ไฟล์เสียงใหญ่เกิน 2 MB");
+    setMsg("กำลังอัปโหลดไฟล์เสียง…");
+    const ext = file.name.split(".").pop()?.toLowerCase() || "mp3";
+    const path = `applause-${Date.now()}.${ext}`;
+    const { error } = await supabase().storage.from("assets").upload(path, file, { contentType: file.type || "audio/mpeg", cacheControl: "31536000" });
+    if (error) return setMsg("อัปโหลดไฟล์เสียงไม่สำเร็จ: " + error.message);
+    setS({ ...s, applause_url: supabase().storage.from("assets").getPublicUrl(path).data.publicUrl });
+    setMsg(`อัปโหลดไฟล์เสียงแล้ว (${Math.round(file.size / 1024)} KB) — กด "บันทึกการตั้งค่า" เพื่อใช้งาน`);
+  }
+
   function pickColor(c: string | null) {
     setS({ ...s!, primary_color: c });
     const root = document.documentElement;
@@ -105,7 +119,7 @@ function SettingsTab({ name }: { name: string }) {
       system_name: s!.system_name, school_name: s!.school_name, logo_url: s!.logo_url, semester: s!.semester,
       academic_year: s!.academic_year, open_semesters: s!.open_semesters, levels: s!.levels, rooms: s!.rooms, open_at: s!.open_at, close_at: s!.close_at,
       theme: s!.theme, primary_color: s!.primary_color,
-      fx_confetti: s!.fx_confetti, fx_sound: s!.fx_sound, fx_spotlight: s!.fx_spotlight, fx_min_gpa: s!.fx_min_gpa, updated_at: new Date().toISOString(),
+      fx_confetti: s!.fx_confetti, fx_sound: s!.fx_sound, fx_spotlight: s!.fx_spotlight, fx_min_gpa: s!.fx_min_gpa, applause_url: s!.applause_url, updated_at: new Date().toISOString(),
     }).eq("id", 1);
     await fetch("/api/revalidate", { method: "POST" });
     logTeacher("update settings", name, "admin");
@@ -205,6 +219,24 @@ function SettingsTab({ name }: { name: string }) {
         <Toggle label="สปอตไลต์ส่อง GPA" hint="หน้าจอมืด ไฟส่องวูบวาบขณะตัวเลขวิ่ง" on={s.fx_spotlight} set={(v) => setS({ ...s, fx_spotlight: v })} />
         <Toggle label="พลุกระดาษ" hint="สีประจำโรงเรียน" on={s.fx_confetti} set={(v) => setS({ ...s, fx_confetti: v })} />
         <Toggle label="เสียงปรบมือ" hint="นักเรียนปิดเสียงเองได้ด้วยปุ่ม 🔊" on={s.fx_sound} set={(v) => setS({ ...s, fx_sound: v })} />
+        {s.fx_sound && (
+          <div className="space-y-2 rounded-2xl bg-surface-2 p-3 text-sm">
+            <div className="font-medium">ไฟล์เสียงปรบมือ</div>
+            {s.applause_url ? (
+              <audio controls src={s.applause_url} className="h-10 w-full" />
+            ) : (
+              <p className="text-xs text-warn">ยังไม่มีไฟล์เสียง — นักเรียนจะไม่ได้ยินเสียง</p>
+            )}
+            <div className="flex gap-2">
+              <label className="btn btn-ghost min-h-9 flex-1 cursor-pointer px-3 text-sm">
+                {s.applause_url ? "เปลี่ยนไฟล์" : "อัปโหลดไฟล์เสียง"}
+                <input type="file" accept="audio/*" className="hidden" onChange={uploadSound} />
+              </label>
+              {s.applause_url && <button className="btn btn-danger min-h-9 px-3 text-sm" onClick={() => setS({ ...s, applause_url: null })}>เอาออก</button>}
+            </div>
+            <p className="text-xs text-muted">MP3 / M4A / WAV ไม่เกิน 2 MB แนะนำยาว 3–5 วินาที</p>
+          </div>
+        )}
         <div className={s.fx_confetti || s.fx_sound ? "" : "opacity-40"}>
           <div className="flex items-center justify-between text-sm">
             <span className="font-medium">GPA ขั้นต่ำที่จะมีพลุและเสียง</span>

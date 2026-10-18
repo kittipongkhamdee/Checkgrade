@@ -104,68 +104,28 @@ export function unlockAudio() {
   } catch { /* no audio support */ }
 }
 
-/** Build a short decaying-noise impulse response for a small-hall reverb. */
-function hall(a: AudioContext, seconds = 1.4) {
-  const len = a.sampleRate * seconds;
-  const ir = a.createBuffer(2, len, a.sampleRate);
-  for (let ch = 0; ch < 2; ch++) {
-    const d = ir.getChannelData(ch);
-    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
-  }
-  return ir;
+let clip: AudioBuffer | null = null;
+
+/** Download and decode the admin's applause recording (call after unlockAudio). */
+export async function loadApplause(url: string | null) {
+  if (!url || !ctx || clip) return;
+  try {
+    const buf = await (await fetch(url)).arrayBuffer();
+    clip = await ctx.decodeAudioData(buf);
+  } catch { /* unsupported file: stay silent */ }
 }
 
-/**
- * Crowd applause: ~28 people, each clapping at their own steady tempo with
- * their own hand "tone", fading in and out, through a soft hall reverb.
- */
+/** Play the applause recording with a short fade-out at the end. */
 export function applause() {
-  if (!ctx || isMuted() || reduced()) return;
-  const a = ctx;
-  const sr = a.sampleRate;
-  const now = a.currentTime + 0.02;
-  const dur = 3.4;
-
-  // one clap = very sharp attack, ~15 ms decay
-  const clap = a.createBuffer(1, Math.floor(sr * 0.03), sr);
-  const c = clap.getChannelData(0);
-  for (let i = 0; i < c.length; i++) c[i] = (Math.random() * 2 - 1) * Math.exp(-i / (sr * 0.0045));
-
-  const out = a.createGain();
-  out.gain.value = 0.9;
-  const hp = a.createBiquadFilter();
-  hp.type = "highpass"; hp.frequency.value = 350;
-  const lp = a.createBiquadFilter();
-  lp.type = "lowpass"; lp.frequency.value = 6500;
-  const verb = a.createConvolver();
-  verb.buffer = hall(a);
-  const wet = a.createGain(); wet.gain.value = 0.35;
-  const dry = a.createGain(); dry.gain.value = 0.8;
-  out.connect(hp).connect(lp);
-  lp.connect(dry).connect(a.destination);
-  lp.connect(verb).connect(wet).connect(a.destination);
-
-  const people = 28;
-  for (let p = 0; p < people; p++) {
-    const rate = 3.6 + Math.random() * 2.2;           // claps per second
-    const tone = 900 + Math.random() * 1600;           // hand resonance
-    const start = Math.random() * 0.5;                 // people join in
-    const stop = dur - Math.random() * 0.9;            // and drop out
-    const loud = 0.25 + Math.random() * 0.35;
-    const f = a.createBiquadFilter();
-    f.type = "peaking"; f.frequency.value = tone; f.Q.value = 1.2; f.gain.value = 9;
-    const pan = a.createStereoPanner();
-    pan.pan.value = Math.random() * 1.6 - 0.8;
-    f.connect(pan).connect(out);
-    for (let t = start; t < stop; t += (1 / rate) * (0.9 + Math.random() * 0.2)) {
-      const env = Math.min(1, t / 0.6) * Math.min(1, (stop - t) / 0.8); // swell in, fade out
-      const src = a.createBufferSource();
-      src.buffer = clap;
-      src.playbackRate.value = 0.85 + Math.random() * 0.3;
-      const g = a.createGain();
-      g.gain.value = loud * env * (0.7 + Math.random() * 0.3);
-      src.connect(g).connect(f);
-      src.start(now + t);
-    }
-  }
+  if (!ctx || !clip || isMuted() || reduced()) return;
+  const src = ctx.createBufferSource();
+  src.buffer = clip;
+  const g = ctx.createGain();
+  const t = ctx.currentTime, end = Math.min(clip.duration, 6);
+  g.gain.setValueAtTime(1, t);
+  g.gain.setValueAtTime(1, t + Math.max(0, end - 0.8));
+  g.gain.linearRampToValueAtTime(0, t + end);
+  src.connect(g).connect(ctx.destination);
+  src.start(t);
+  src.stop(t + end);
 }
