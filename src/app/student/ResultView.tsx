@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Settings, StudentTerm } from "@/lib/types";
 import { gradeColor } from "@/lib/format";
+import { pendingCodes, pendingLabel } from "@/lib/gpa";
 import { CountUp, Reveal, applause, schoolConfetti } from "@/components/Motion";
 
 const fmt = (v: unknown) => (v == null || v === "" ? "-" : String(v));
@@ -15,11 +16,11 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
   const gpaRef = useRef<HTMLDivElement>(null);
   // Spotlight only on the first reveal (not when switching semester tabs)
   const [spot, setSpot] = useState<"on" | "fading" | "done">(() =>
-    !s.fx_spotlight || (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) ? "done" : "on");
+    !s.fx_spotlight || pendingCodes(sorted[Math.max(0, sorted.findIndex((x) => x.semester === s.semester))]?.scores ?? []).length > 0 || (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) ? "done" : "on");
   const [pos, setPos] = useState({ x: 0, y: 0 });
   useEffect(() => {
     if (spot !== "on") return;
-    if (t.gpa == null) { setSpot("done"); return; } // nothing to count up
+    if (t.gpa == null || isPending) { setSpot("done"); return; } // nothing to count up
     const place = () => {
       const r = gpaRef.current?.getBoundingClientRect();
       if (r) setPos({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
@@ -37,8 +38,8 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
       setSpot("fading");
       setTimeout(() => setSpot("done"), 700);
     }
-    // Celebrate only at or above the admin's GPA threshold
-    if (Number(t.gpa) < Number(s.fx_min_gpa)) return;
+    // Celebrate only at or above the admin's GPA threshold, never while pending
+    if (isPending || Number(t.gpa) < Number(s.fx_min_gpa)) return;
     setTimeout(() => {
       if (s.fx_confetti) schoolConfetti();
       if (s.fx_sound) applause();
@@ -49,6 +50,9 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
   const [shot, setShot] = useState<{ url: string; file: File } | null>(null);
 
   const credits = t.subjects.reduce((a, x) => a + (x.credit || 0), 0);
+  // ร / มส in any subject → GPA is not final yet (สพฐ.): show "รอผล", no celebration
+  const pending = pendingCodes(t.scores);
+  const isPending = pending.length > 0;
   const gradeOf = (code: string) => t.scores.find((x) => x.code === code);
 
   /** Render a node to PNG and open the save sheet. */
@@ -103,20 +107,29 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
         <div className="mt-5 flex items-end justify-between">
           <div>
             <div className="text-xs uppercase tracking-wider opacity-70">เกรดเฉลี่ย (GPA)</div>
-            <div ref={gpaRef} className="inline-block text-6xl font-bold tabular-nums leading-none">{t.gpa != null ? <CountUp value={Number(t.gpa)} decimals={2} {...timing} onDone={finishCount} /> : "-"}</div>
+            <div ref={gpaRef} className="inline-block text-6xl font-bold tabular-nums leading-none">{isPending ? <span className="text-5xl">รอผล</span> : t.gpa != null ? <CountUp value={Number(t.gpa)} decimals={2} {...timing} onDone={finishCount} /> : "-"}</div>
           </div>
           <div className="text-right text-sm">
-            <div>ลำดับที่ <b className="text-lg">{t.rank != null ? <CountUp value={Number(t.rank)} {...timing} /> : "-"}</b></div>
+            <div>ลำดับที่ <b className="text-lg">{isPending ? "-" : t.rank != null ? <CountUp value={Number(t.rank)} {...timing} /> : "-"}</b></div>
             <div className="opacity-80">{t.subjects.length} วิชา · {credits} หน่วยกิต</div>
           </div>
         </div>
         <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
-          <Stat label="คะแนนรวม" v={t.total != null ? <CountUp value={Number(t.total)} {...timing} /> : "-"} />
-          <Stat label="ร้อยละ" v={t.percent != null ? <CountUp value={Number(t.percent)} decimals={2} {...timing} /> : "-"} />
+          <Stat label="คะแนนรวม" v={isPending ? "-" : t.total != null ? <CountUp value={Number(t.total)} {...timing} /> : "-"} />
+          <Stat label="ร้อยละ" v={isPending ? "-" : t.percent != null ? <CountUp value={Number(t.percent)} decimals={2} {...timing} /> : "-"} />
           <Stat label="คุณลักษณะ" v={fmt(t.traits)} />
         </div>
       </div>
 
+      {isPending && (
+        <div className="card flex gap-3 p-4 text-sm" style={{ borderColor: "color-mix(in srgb, var(--warn) 40%, white)" }}>
+          <span className="grid size-9 shrink-0 place-items-center rounded-full font-bold text-white" style={{ background: "var(--warn)" }}>!</span>
+          <div>
+            <div className="font-semibold">ยังไม่สรุปผลการเรียนเฉลี่ย</div>
+            <div className="text-muted">มีรายวิชาที่ยังไม่ได้รับผลการเรียน (ร / มส) {pending.length} วิชา กรุณาติดต่อครูประจำวิชาเพื่อดำเนินการแก้ไข</div>
+          </div>
+        </div>
+      )}
       </div>
       <div className="space-y-4">
       <div className="card divide-y divide-[var(--border)]">
@@ -132,8 +145,14 @@ export default function ResultView({ terms, settings: s }: { terms: StudentTerm[
                 <div className="truncate font-medium">{sub.name}</div>
                 <div className="text-xs text-muted">{sub.code} · {sub.type || "-"} · {sub.credit} นก.</div>
               </div>
-              <div className="w-12 text-center tabular-nums">{fmt(g?.score)}</div>
-              <div className="w-12 text-center text-lg font-bold tabular-nums" style={{ color: gradeColor(g?.grade) }}>{fmt(g?.grade)}</div>
+              <div className="w-12 text-center tabular-nums">{pending.includes(sub.code) && typeof g?.score !== "number" ? "-" : fmt(g?.score)}</div>
+              {pending.includes(sub.code) ? (
+                <div className="grid w-12 place-items-center">
+                  <span className="rounded-full px-2 py-0.5 text-sm font-bold text-white" style={{ background: "var(--warn)" }}>{pendingLabel(g)}</span>
+                </div>
+              ) : (
+                <div className="w-12 text-center text-lg font-bold tabular-nums" style={{ color: gradeColor(g?.grade) }}>{fmt(g?.grade)}</div>
+              )}
             </div>
             </Reveal>
           );
@@ -229,10 +248,10 @@ function CertCard({ ref, t, s, credits }: { ref: React.Ref<HTMLDivElement>; t: S
           <div className="text-[#6b5458]">{t.level}/{t.room} · เลขประจำตัว {t.student_code}</div>
           <div className="mx-auto mt-5 w-fit rounded-3xl px-10 py-4 text-white" style={{ background: "var(--hero)" }}>
             <div className="text-xs opacity-80">เกรดเฉลี่ย (GPA)</div>
-            <div className="text-6xl font-bold leading-none tabular-nums">{t.gpa != null ? Number(t.gpa).toFixed(2) : "-"}</div>
+            <div className="text-6xl font-bold leading-none tabular-nums">{pendingCodes(t.scores).length ? "รอผล" : t.gpa != null ? Number(t.gpa).toFixed(2) : "-"}</div>
           </div>
           <div className="mt-5 grid grid-cols-3 gap-2 text-sm">
-            {[["ลำดับที่", fmt(t.rank)], ["หน่วยกิต", String(credits)], ["ร้อยละ", t.percent != null ? Number(t.percent).toFixed(2) : "-"]].map(([k, v]) => (
+            {[["ลำดับที่", pendingCodes(t.scores).length ? "-" : fmt(t.rank)], ["หน่วยกิต", String(credits)], ["ร้อยละ", pendingCodes(t.scores).length ? "-" : t.percent != null ? Number(t.percent).toFixed(2) : "-"]].map(([k, v]) => (
               <div key={k} className="rounded-2xl border py-2" style={{ borderColor: "color-mix(in srgb, var(--primary) 25%, white)" }}>
                 <div className="text-xs text-[#6b5458]">{k}</div>
                 <div className="text-lg font-bold" style={{ color: "var(--primary)" }}>{v}</div>

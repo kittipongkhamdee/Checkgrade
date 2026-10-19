@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { StudentRow, Subject } from "@/lib/types";
 import { gradeColor } from "@/lib/format";
 import { confirmDialog } from "./Dialog";
+import { computeGpa, pendingCodes } from "@/lib/gpa";
 
 const parse = (v: string): string | number | null => {
   const s = v.trim();
@@ -35,7 +36,9 @@ export function StudentTable({ subjects, rows, onChange }: { subjects: Subject[]
     <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:items-start">
       <p className="text-xs text-muted md:col-span-2">แตะที่ชื่อนักเรียนเพื่อดู/แก้ไขคะแนนทุกวิชา · {subjects.length} วิชา</p>
       {rows.map((r, i) => {
-        const missing = r.scores.filter((s) => s.grade == null).length;
+        const missing = pendingCodes(r.scores).length;
+        const calc = computeGpa(subjects, r.scores);
+        const mismatch = calc != null && (r.gpa == null || Math.abs(calc - Number(r.gpa)) > 0.005);
         const isOpen = open === i;
         return (
           <div key={i} className={`card overflow-hidden ${isOpen ? "md:col-span-2" : ""}`}>
@@ -45,18 +48,25 @@ export function StudentTable({ subjects, rows, onChange }: { subjects: Subject[]
                 <div className="truncate font-semibold">{r.full_name || <span className="text-muted">(ยังไม่ระบุชื่อ)</span>}</div>
                 <div className="text-xs text-muted">
                   {r.student_code || "-"}
-                  {missing > 0 && <span className="ml-2 rounded bg-[color-mix(in_srgb,var(--warn)_15%,transparent)] px-1.5 text-warn">ไม่มีเกรด {missing} วิชา</span>}
+                  {missing > 0 && <span className="ml-2 rounded bg-[color-mix(in_srgb,var(--warn)_15%,transparent)] px-1.5 text-warn">ร/มส {missing} วิชา · รอผล</span>}
+                  {mismatch && <span className="ml-2 rounded bg-[color-mix(in_srgb,var(--bad)_12%,transparent)] px-1.5 text-bad">GPA ไม่ตรงสูตร</span>}
                 </div>
               </div>
               <div className="text-right">
                 <div className="text-[10px] text-muted">GPA</div>
-                <div className="font-bold tabular-nums">{r.gpa != null ? Number(r.gpa).toFixed(2) : "-"}</div>
+                <div className="font-bold tabular-nums">{missing ? "รอผล" : r.gpa != null ? Number(r.gpa).toFixed(2) : "-"}</div>
               </div>
               <span className={`text-muted transition-transform ${isOpen ? "rotate-90" : ""}`}>›</span>
             </button>
 
             {isOpen && (
               <div className="space-y-4 border-t border-line p-3">
+                {mismatch && (
+                  <div className="flex flex-wrap items-center gap-2 rounded-xl p-3 text-sm" style={{ background: "color-mix(in srgb, var(--bad) 8%, white)" }}>
+                    <span className="flex-1">เกรดเฉลี่ยในไฟล์ <b>{r.gpa ?? "-"}</b> แต่คำนวณตามสูตร สพฐ. ได้ <b>{calc!.toFixed(2)}</b></span>
+                    <button className="btn btn-primary min-h-9 px-3 text-sm" onClick={() => update(i, { gpa: calc })}>ใช้ {calc!.toFixed(2)}</button>
+                  </div>
+                )}
                 <div className="grid grid-cols-[4rem_6rem_1fr] gap-2">
                   <Field label="เลขที่" value={show(r.no)} onChange={(v) => update(i, { no: numOrNull(v) })} mode="numeric" />
                   <Field label="เลขประจำตัว" value={r.student_code} onChange={(v) => update(i, { student_code: v.trim() })} mode="numeric" />

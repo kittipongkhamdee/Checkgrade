@@ -10,6 +10,7 @@ import { saveSet } from "@/lib/saveSet";
 import { logTeacher } from "@/lib/useAuth";
 import { supabase } from "@/lib/supabase";
 import { ProgressRing } from "@/components/Dialog";
+import { computeGpa } from "@/lib/gpa";
 
 export default function UploadPage() {
   return <Guard>{(p) => <Upload name={p.full_name} />}</Guard>;
@@ -138,6 +139,17 @@ function Upload({ name }: { name: string }) {
               <button className="btn btn-ghost min-h-9 shrink-0 px-3 text-sm" onClick={() => setTerm(null)}>เปลี่ยนชีต</button>
             </div>
             {term.warnings.map((w) => <p key={w} className="rounded-xl bg-surface-2 p-3 text-sm text-warn">⚠ {w} — ช่องสีเหลืองคือช่องที่ไม่มีเกรด</p>)}
+            {(() => {
+              const bad = term.students.filter((r) => { const c = computeGpa(term.set.subjects, r.scores); return c != null && (r.gpa == null || Math.abs(c - Number(r.gpa)) > 0.005); });
+              return bad.length > 0 ? (
+                <div className="flex flex-wrap items-center gap-2 rounded-xl p-3 text-sm" style={{ background: "color-mix(in srgb, var(--bad) 8%, white)" }}>
+                  <span className="flex-1 text-bad">⚠ เกรดเฉลี่ยในไฟล์ไม่ตรงกับสูตร สพฐ. {bad.length} คน (ดูป้าย “GPA ไม่ตรงสูตร”)</span>
+                  <button className="btn btn-primary min-h-9 px-3 text-sm" onClick={() => setTerm({ ...term, students: term.students.map((r) => { const c = computeGpa(term.set.subjects, r.scores); return bad.includes(r) && c != null ? { ...r, gpa: c } : r; }) })}>
+                    แก้ทั้งหมดตามสูตร
+                  </button>
+                </div>
+              ) : null;
+            })()}
             <SetMetaForm set={term.set} onChange={(set) => setTerm({ ...term, set })} lockTerm />
             <StudentTable subjects={term.set.subjects} rows={term.students} onChange={(students) => setTerm({ ...term, students })} />
           </>
