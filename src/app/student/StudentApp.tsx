@@ -28,9 +28,24 @@ export default function StudentApp({ settings: s }: { settings: Settings }) {
     setError("");
   }, []);
 
-  async function lookup(e: React.FormEvent) {
+  // Arriving from the home page tab: /student?code=1234 looks up right away
+  useEffect(() => {
+    const c = new URLSearchParams(window.location.search).get("code")?.trim();
+    if (c) {
+      setCode(c);
+      history.replaceState(null, "", "/student");
+      search(c);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function lookup(e: React.FormEvent) {
     e.preventDefault();
-    const c = code.trim();
+    search(code);
+  }
+
+  async function search(raw: string) {
+    const c = raw.trim();
     if (!c) return;
     setLoading(true);
     setError("");

@@ -1,18 +1,18 @@
-import Link from "next/link";
 import { getSettings } from "@/lib/settings";
 import { thaiDateTime, windowState } from "@/lib/format";
-import { BoardIcon, CapIcon, ChevronIcon, ClockIcon } from "@/components/Icons";
+import { CapIcon, ClockIcon } from "@/components/Icons";
+import { HomeTabs } from "@/components/HomeTabs";
 
 export default async function Home() {
   const s = await getSettings();
   const state = windowState(s.open_at, s.close_at);
   const term = s.open_semesters.length ? `ภาคเรียนที่ ${s.open_semesters.join(" และ ")} / ${s.academic_year}` : `ปีการศึกษา ${s.academic_year}`;
-  const stateText = state === "open" ? "เปิดให้ตรวจสอบแล้ว" : state === "before" ? "ยังไม่เปิดให้ตรวจสอบ" : "ปิดการตรวจสอบแล้ว";
+  const stateText = state === "open" ? "เปิดแล้ว" : state === "before" ? "ยังไม่เปิด" : "ปิดแล้ว";
   const stateColor = state === "open" ? "#34c759" : "#ff9f0a";
 
   return (
     <main className="relative flex min-h-dvh flex-col">
-      <section className="flex flex-col items-center px-6 pb-8 pt-16 text-center md:pt-24">
+      <section className="flex flex-col items-center px-6 pb-6 pt-12 text-center md:pt-20">
         <div className="glass pop grid size-24 place-items-center rounded-[28px]">
           {s.logo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -26,37 +26,16 @@ export default async function Home() {
         <span style={{ animationDelay: "280ms" }} className="glass rise mt-4 rounded-full px-4 py-1.5 text-sm font-semibold">{term}</span>
       </section>
 
-      <section className="mx-auto grid w-full max-w-3xl flex-1 content-start gap-4 px-5 md:grid-cols-2">
-        <Link href="/student" style={{ animationDelay: "380ms" }} className="glass rise group flex items-center gap-4 rounded-[24px] p-4 transition active:scale-[.98]">
-          <div className="grid size-14 shrink-0 place-items-center rounded-[18px] text-white shadow-md" style={{ background: "var(--icon-a)" }}>
-            <CapIcon />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-lg font-bold">นักเรียน</div>
-            <div className="text-sm text-muted">ดูผลการเรียนด้วยเลขประจำตัว</div>
-          </div>
-          <ChevronIcon className="shrink-0 text-muted transition group-hover:translate-x-0.5" />
-        </Link>
-
-        <Link href="/teacher" style={{ animationDelay: "460ms" }} className="glass rise group flex items-center gap-4 rounded-[24px] p-4 transition active:scale-[.98]">
-          <div className="grid size-14 shrink-0 place-items-center rounded-[18px] text-white shadow-md" style={{ background: "var(--icon-b)" }}>
-            <BoardIcon />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-lg font-bold">ครู</div>
-            <div className="text-sm text-muted">เข้าสู่ระบบเพื่อจัดการผลการเรียน</div>
-          </div>
-          <ChevronIcon className="shrink-0 text-muted transition group-hover:translate-x-0.5" />
-        </Link>
-
-        <div style={{ animationDelay: "540ms" }} className="glass rise rounded-[22px] p-4 text-sm md:col-span-2">
-          <div className="flex items-center gap-2 font-bold"><ClockIcon className="text-muted" /> ช่วงเวลาตรวจสอบผล</div>
-          <div className="mt-1.5 text-muted">
-            {s.open_at || s.close_at ? `เปิด ${thaiDateTime(s.open_at)} · ปิด ${thaiDateTime(s.close_at)}` : "ไม่จำกัดเวลา"}
-          </div>
-          <div className="mt-2 flex items-center gap-2 font-bold" style={{ color: stateColor }}>
+      <section className="mx-auto flex w-full max-w-md flex-1 flex-col gap-3 px-5">
+        <HomeTabs openAt={s.open_at} closeAt={s.close_at} />
+        <div style={{ animationDelay: "460ms" }} className="glass rise flex items-center justify-between gap-3 rounded-[20px] px-4 py-3 text-sm">
+          <span className="flex min-w-0 items-center gap-2 text-muted">
+            <ClockIcon className="shrink-0" />
+            <span className="truncate">{s.open_at || s.close_at ? `เปิด ${thaiDateTime(s.open_at)} · ปิด ${thaiDateTime(s.close_at)}` : "ช่วงเวลาตรวจสอบผล · ไม่จำกัดเวลา"}</span>
+          </span>
+          <b className="flex shrink-0 items-center gap-1.5" style={{ color: stateColor }}>
             <span className="size-2 rounded-full" style={{ background: stateColor }} /> {stateText}
-          </div>
+          </b>
         </div>
       </section>
 
