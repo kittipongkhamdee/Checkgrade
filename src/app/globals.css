@@ -199,6 +199,8 @@ body {
   @property --r { syntax: "<length>"; inherits: true; initial-value: 130px; }
   @keyframes spotPulse { 0%, 100% { --r: 120px; } 50% { --r: 150px; } }
   @keyframes spotFlicker { 0% { opacity: 1; } 8% { opacity: .2; } 11% { opacity: 1; } 47% { opacity: .5; } 50% { opacity: 1; } 71% { opacity: .1; } 74% { opacity: 1; } }
+  .shake { animation: shake .4s; border-color: var(--bad) !important; }
+  @keyframes shake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
   .skeleton { background: var(--surface-2); border-radius: 8px; animation: pulse 1.4s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity: .5; } }
 }

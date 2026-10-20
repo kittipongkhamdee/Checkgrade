@@ -39,6 +39,7 @@ export function HomeTabs({ openAt, closeAt }: { openAt: string | null; closeAt: 
   const [show, setShow] = useState(false);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [shake, setShake] = useState(false);
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("tab") === "teacher") setTab("teacher");
@@ -52,7 +53,12 @@ export function HomeTabs({ openAt, closeAt }: { openAt: string | null; closeAt: 
   function student(e: React.FormEvent) {
     e.preventDefault();
     const c = code.trim();
-    if (!c) return;
+    if (!c) {
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+      document.getElementById("home-code")?.focus();
+      return;
+    }
     setBusy(true);
     router.push(`/student?code=${encodeURIComponent(c)}`);
   }
@@ -72,7 +78,8 @@ export function HomeTabs({ openAt, closeAt }: { openAt: string | null; closeAt: 
 
   const tabBtn = (t: Tab, label: string, icon: React.ReactNode) => (
     <button type="button" role="tab" aria-selected={tab === t} onClick={() => switchTab(t)}
-      className={`flex h-12 items-center justify-center gap-2 rounded-xl font-semibold transition ${tab === t ? "bg-white text-primary shadow-[0_2px_8px_rgb(0_0_0/0.12)]" : "text-muted"}`}>
+      className={`flex h-12 items-center justify-center gap-2 rounded-xl font-semibold transition ${tab === t ? "text-white" : "text-muted hover:bg-white/50"}`}
+      style={tab === t ? { background: "var(--hero)", boxShadow: "0 6px 16px color-mix(in srgb, var(--primary) 35%, transparent), inset 0 1px 0 rgb(255 255 255 / .25)" } : undefined}>
       {icon} {label}
     </button>
   );
@@ -99,9 +106,9 @@ export function HomeTabs({ openAt, closeAt }: { openAt: string | null; closeAt: 
         ) : (
           <form onSubmit={student}>
             <label htmlFor="home-code" className="mb-1.5 mt-4 flex items-center gap-1.5 text-sm text-muted"><IdIcon /> เลขประจำตัวนักเรียน</label>
-            <input id="home-code" className="input h-14 text-center text-2xl tracking-[.3em]" inputMode="numeric" autoComplete="off"
+            <input id="home-code" className={`input h-14 text-center text-2xl tracking-[.3em] ${shake ? "shake" : ""}`} inputMode="numeric" autoComplete="off"
               placeholder="0000" value={code} onChange={(e) => setCode(e.target.value)} />
-            <button className="btn btn-primary mt-4 h-14 w-full text-lg shadow-lg" disabled={busy || !code.trim()} style={{ background: "var(--hero)" }}>
+            <button className="btn btn-primary mt-4 h-14 w-full text-lg shadow-lg" disabled={busy} style={{ background: "var(--hero)" }}>
               <SearchIcon /> {busy ? "กำลังค้นหา…" : "ตรวจสอบผลการเรียน"}
             </button>
             <p className="mt-3 text-center text-xs text-muted">ใช้เลขประจำตัวนักเรียนเท่านั้น ไม่ต้องใช้รหัสผ่าน</p>
